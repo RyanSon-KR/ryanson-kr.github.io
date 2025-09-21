@@ -77,6 +77,8 @@
             font-weight: 600;
             color: #1e3a8a; /* A darker blue */
             margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid #ddd;
         }
         .feedback-section p {
             color: #4b5563;
@@ -718,7 +720,7 @@
             const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
             let html = '';
             for (let i = 0; i < sections.length; i += 2) {
-                const title = sections[i];
+                const title = sections[i].replace(/:/g, ''); // 제목에서 콜론 제거
                 const content = sections[i + 1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
                 html += `<div class="feedback-section mb-4"><h4>${title}</h4><p>${content}</p></div>`;
             }
@@ -768,66 +770,70 @@
         const surveyForm = document.getElementById('artb-survey-form');
         const surveyContainer = document.getElementById('survey-container');
         const surveyThanks = document.getElementById('survey-thanks');
+        if(surveyForm) {
+            surveyForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(surveyForm);
+                const interests = formData.getAll('interest');
+                const data = { role: formData.get('role'), interests: interests, feedback_text: formData.get('feedback_text')};
+                try {
+                    const response = await fetch(`${backendUrl}/survey`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                    });
+                    if (!response.ok) throw new Error('서버에 문제가 발생했습니다.');
+                    surveyContainer.classList.add('hidden');
+                    surveyThanks.classList.remove('hidden');
+                } catch (error) {
+                    console.error('설문 제출 오류:', error);
+                    alert('설문 제출에 실패했습니다. 잠시 후 다시 시도해주세요.');
+                }
+            });
+        }
 
-        surveyForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(surveyForm);
-            const interests = formData.getAll('interest');
-            const data = { role: formData.get('role'), interests: interests, feedback_text: formData.get('feedback_text')};
-            try {
-                const response = await fetch(`${backendUrl}/survey`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                });
-                if (!response.ok) throw new Error('서버에 문제가 발생했습니다.');
-                surveyContainer.classList.add('hidden');
-                surveyThanks.classList.remove('hidden');
-            } catch (error) {
-                console.error('설문 제출 오류:', error);
-                alert('설문 제출에 실패했습니다. 잠시 후 다시 시도해주세요.');
-            }
-        });
 
         const contactForm = document.getElementById('contact-form');
         const contactContainer = document.getElementById('contact-container');
         const contactThanks = document.getElementById('contact-thanks');
-
-        contactForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(contactForm);
-            const data = Object.fromEntries(formData.entries());
-            try {
-                const response = await fetch(`${backendUrl}/contact`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                });
-                if (!response.ok) throw new Error('문의 제출에 실패했습니다.');
-                contactContainer.classList.add('hidden');
-                contactThanks.classList.remove('hidden');
-            } catch (error) {
-                console.error('문의 제출 오류:', error);
-                alert(error.message);
-            }
-        });
+        if(contactForm) {
+            contactForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(contactForm);
+                const data = Object.fromEntries(formData.entries());
+                try {
+                    const response = await fetch(`${backendUrl}/contact`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                    });
+                    if (!response.ok) throw new Error('문의 제출에 실패했습니다.');
+                    contactContainer.classList.add('hidden');
+                    contactThanks.classList.remove('hidden');
+                } catch (error) {
+                    console.error('문의 제출 오류:', error);
+                    alert(error.message);
+                }
+            });
+        }
         
         const preregisterForm = document.getElementById('preregister-form');
         const ctaContainer = document.getElementById('cta-container');
         const ctaThanks = document.getElementById('cta-thanks');
-
-        preregisterForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(preregisterForm);
-            const data = Object.fromEntries(formData.entries());
-            try {
-                const response = await fetch(`${backendUrl}/preregister`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                });
-                if (!response.ok) throw new Error('사전 등록에 실패했습니다.');
-                ctaContainer.classList.add('hidden');
-                ctaThanks.classList.remove('hidden');
-            } catch (error) {
-                console.error('사전 등록 오류:', error);
-                alert(error.message);
-            }
-        });
+        if(preregisterForm){
+            preregisterForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(preregisterForm);
+                const data = Object.fromEntries(formData.entries());
+                try {
+                    const response = await fetch(`${backendUrl}/preregister`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                    });
+                    if (!response.ok) throw new Error('사전 등록에 실패했습니다.');
+                    ctaContainer.classList.add('hidden');
+                    ctaThanks.classList.remove('hidden');
+                } catch (error) {
+                    console.error('사전 등록 오류:', error);
+                    alert(error.message);
+                }
+            });
+        }
     </script>
 </body>
 </html>
