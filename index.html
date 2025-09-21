@@ -15,74 +15,21 @@
         .feature-icon {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        .demo-container {
-            position: relative;
-            overflow: hidden;
-            background-color: #000;
-        }
-        #canvasOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        /* 팝업 및 모달 스타일 */
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-        .modal-content {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            max-width: 90%;
-            width: 600px;
-        }
-         .progress-step {
-            display: flex;
-            align-items: center;
-            opacity: 0.5;
-            transition: opacity 0.3s ease-in-out;
-        }
-        .progress-step.active {
-            opacity: 1;
-        }
-        .progress-step .icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-right: 1rem;
-            transition: background-color 0.3s, color 0.3s;
-        }
+        .demo-container { position: relative; overflow: hidden; background-color: #000; }
+        #canvasOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background-color: white; padding: 2rem; border-radius: 0.5rem; max-width: 90%; width: 600px; }
+        .progress-step { display: flex; align-items: center; opacity: 0.5; transition: opacity 0.3s ease-in-out; }
+        .progress-step.active { opacity: 1; }
+        .progress-step .icon { width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-right: 1rem; transition: background-color 0.3s, color 0.3s; }
         .progress-step.pending .icon { background-color: #e5e7eb; color: #6b7280; }
         .progress-step.active .icon { background-color: #4f46e5; color: white; }
         .progress-step.completed .icon { background-color: #10b981; color: white; }
-        
-        /* 피드백 서식 스타일 */
-        .feedback-section h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1e3a8a; /* A darker blue */
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.25rem;
-            border-bottom: 1px solid #ddd;
-        }
-        .feedback-section p {
-            color: #4b5563;
-        }
+        .feedback-section h4 { font-size: 1.1rem; font-weight: 600; color: #1e3a8a; margin-bottom: 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid #ddd; }
+        .feedback-section p { color: #4b5563; }
+        /* 업로드 드롭존 */
+        .dropzone { border: 2px dashed #a5b4fc; background: #f8fafc; }
+        .dropzone.dragover { border-color: #6366f1; background: #eef2ff; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -173,7 +120,6 @@
             </div>
         </section>
 
-
         <!-- Demo Section -->
         <section id="demo" class="py-20 bg-gray-100">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -184,8 +130,19 @@
 
                 <div class="bg-white p-6 rounded-lg shadow-lg">
                     <div id="ui-section" class="space-y-4">
-                        <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">카메라로 작품 촬영하기</button>
-                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">카메라로 작품 촬영하기</button>
+                            <!-- NEW: 업로드 버튼 -->
+                            <button id="uploadImageButton" class="w-full bg-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-800 transition text-lg">이미지 업로드하기</button>
+                        </div>
+                        <!-- NEW: 드롭존 -->
+                        <div id="dropzone" class="dropzone rounded-lg p-6 text-center text-slate-600">
+                            <p class="font-semibold">여기에 이미지를 드래그 앤 드롭하거나, 위의 "이미지 업로드하기" 버튼을 클릭하세요</p>
+                            <p class="text-sm mt-1">지원 형식: JPG, PNG, HEIC (브라우저 지원 시)</p>
+                        </div>
+                        <!-- 숨김 파일 입력 -->
+                        <input id="imageFileInput" class="hidden" type="file" accept="image/*" />
+
                         <div id="camera-view" class="hidden relative demo-container rounded-lg">
                             <video id="videoElement" class="w-full h-full" autoplay playsinline></video>
                             <canvas id="canvasOverlay"></canvas>
@@ -195,7 +152,7 @@
                             </div>
                         </div>
                         <p id="camera-error" class="hidden text-center text-red-500 p-2 bg-red-50 rounded-md"></p>
-                        
+
                         <div id="result-section" class="hidden mt-6 p-4 border rounded-lg bg-gray-50">
                             <h3 class="text-xl font-semibold mb-4">최종 분석 결과</h3>
                             <img id="processedImage" class="w-full rounded-lg mb-4 border" alt="보정된 이미지">
@@ -404,6 +361,9 @@
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
         const startCameraButton = document.getElementById('startCameraButton');
+        const uploadImageButton = document.getElementById('uploadImageButton'); // NEW
+        const imageFileInput = document.getElementById('imageFileInput'); // NEW
+        const dropzone = document.getElementById('dropzone'); // NEW
         const cameraView = document.getElementById('camera-view');
         const videoElement = document.getElementById('videoElement');
         const canvasOverlay = document.getElementById('canvasOverlay');
@@ -525,7 +485,116 @@
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
 
-            let src = cv.imread(canvas);
+            const bestContour = findLargestQuad(canvas);
+
+            const overlayCtx = canvasOverlay.getContext('2d');
+            overlayCtx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
+
+            if (bestContour) {
+                const points = bestContour.map(p => ({
+                    x: p.x * (canvasOverlay.width / videoWidth),
+                    y: p.y * (canvasOverlay.height / videoHeight)
+                }));
+                lastDetectedCorners = points; 
+
+                overlayCtx.beginPath();
+                overlayCtx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < 4; i++) overlayCtx.lineTo(points[i].x, points[i].y);
+                overlayCtx.closePath();
+                overlayCtx.strokeStyle = 'rgba(74, 222, 128, 0.9)';
+                overlayCtx.lineWidth = 4;
+                overlayCtx.stroke();
+            } else {
+                 lastDetectedCorners = null;
+            }
+            
+            processVideoTimeout = setTimeout(processVideo, 50); 
+        }
+
+        // NEW: 파일 업로드 처리 (버튼 & 드롭존)
+        uploadImageButton.addEventListener('click', () => imageFileInput.click());
+        imageFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (file) await handleImageFile(file);
+            imageFileInput.value = '';
+        });
+
+        // 드래그 앤 드롭
+        ;['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
+            e.preventDefault(); e.stopPropagation();
+            dropzone.classList.add('dragover');
+        }));
+        ;['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => {
+            e.preventDefault(); e.stopPropagation();
+            dropzone.classList.remove('dragover');
+        }));
+        dropzone.addEventListener('drop', async (e) => {
+            const file = e.dataTransfer?.files?.[0];
+            if (file) await handleImageFile(file);
+        });
+
+        async function handleImageFile(file) {
+            cameraError.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            if (!cvLoaded) {
+                cameraError.textContent = 'OpenCV 로딩 중입니다. 잠시 후 다시 시도하세요.';
+                cameraError.classList.remove('hidden');
+                return;
+            }
+            if (!file.type.startsWith('image/')) {
+                cameraError.textContent = '이미지 파일만 업로드할 수 있습니다.';
+                cameraError.classList.remove('hidden');
+                return;
+            }
+            try {
+                const canvas = await readFileToCanvas(file);
+                // 정사각/대형 이미지 리사이즈(최대 1600px)로 메모리 절약
+                const resized = resizeCanvasMax(canvas, 1600);
+                const corners = findLargestQuad(resized);
+                showCorrectionChoice(resized, corners);
+            } catch (err) {
+                console.error(err);
+                cameraError.textContent = '이미지를 불러오는 중 오류가 발생했습니다.';
+                cameraError.classList.remove('hidden');
+            }
+        }
+
+        async function readFileToCanvas(file) {
+            const url = URL.createObjectURL(file);
+            try {
+                const img = await createImageBitmap(file).catch(async () => {
+                    return await new Promise((resolve, reject) => {
+                        const im = new Image();
+                        im.onload = () => resolve(im);
+                        im.onerror = reject;
+                        im.src = url;
+                    });
+                });
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                return canvas;
+            } finally {
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        function resizeCanvasMax(srcCanvas, maxSide = 1600) {
+            const { width, height } = srcCanvas;
+            const scale = Math.min(1, maxSide / Math.max(width, height));
+            if (scale === 1) return srcCanvas;
+            const dst = document.createElement('canvas');
+            dst.width = Math.round(width * scale);
+            dst.height = Math.round(height * scale);
+            const ctx = dst.getContext('2d');
+            ctx.drawImage(srcCanvas, 0, 0, dst.width, dst.height);
+            return dst;
+        }
+
+        // 공통: 최대 사각형(문서) 검출
+        function findLargestQuad(canvas) {
+            const src = cv.imread(canvas);
             let gray = new cv.Mat();
             cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
             cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
@@ -537,60 +606,34 @@
             cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
 
             let maxArea = 0;
-            let bestContour = null;
-            const minArea = (videoWidth * videoHeight) / 10;
+            let best = null;
+            const minArea = (canvas.width * canvas.height) / 10;
 
             for (let i = 0; i < contours.size(); ++i) {
-                let cnt = contours.get(i);
-                let area = cv.contourArea(cnt);
+                const cnt = contours.get(i);
+                const area = cv.contourArea(cnt);
                 if (area > minArea) {
-                    let peri = cv.arcLength(cnt, true);
-                    let approx = new cv.Mat();
+                    const peri = cv.arcLength(cnt, true);
+                    const approx = new cv.Mat();
                     cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
                     if (approx.rows === 4) {
                         if (area > maxArea) {
                             maxArea = area;
-                            bestContour = approx.clone();
+                            best = [];
+                            for (let j = 0; j < 4; j++) {
+                                best.push({ x: approx.data32S[j*2], y: approx.data32S[j*2+1] });
+                            }
                         }
                     }
                     approx.delete();
                 }
                 cnt.delete();
             }
-
-            const overlayCtx = canvasOverlay.getContext('2d');
-            overlayCtx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
-
-            if (bestContour) {
-                const points = [];
-                for(let i=0; i<4; i++){
-                    points.push({
-                        x: bestContour.data32S[i * 2] * (canvasOverlay.width / videoWidth),
-                        y: bestContour.data32S[i * 2 + 1] * (canvasOverlay.height / videoHeight)
-                    });
-                }
-                lastDetectedCorners = points; 
-
-                overlayCtx.beginPath();
-                overlayCtx.moveTo(points[0].x, points[0].y);
-                for (let i = 1; i < 4; i++) {
-                    overlayCtx.lineTo(points[i].x, points[i].y);
-                }
-                overlayCtx.closePath();
-                overlayCtx.strokeStyle = 'rgba(74, 222, 128, 0.9)';
-                overlayCtx.lineWidth = 4;
-                overlayCtx.stroke();
-                
-                bestContour.delete();
-            } else {
-                 lastDetectedCorners = null;
-            }
-            
             src.delete(); gray.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-            
-            processVideoTimeout = setTimeout(processVideo, 50); 
+            return best; // [{x,y} * 4] 또는 null
         }
 
+        const captureButton = document.getElementById('captureButton');
         captureButton.addEventListener('click', () => {
             clearTimeout(processVideoTimeout);
             
@@ -628,6 +671,7 @@
                 choiceOriginalImageEl.src = originalCanvas.toDataURL('image/jpeg');
                 
                 let src = cv.imread(originalCanvas);
+                // 코너 정렬 (상단-하단, 좌-우)
                 corners.sort((a, b) => a.y - b.y);
                 const topPoints = [corners[0], corners[1]].sort((a, b) => a.x - b.x);
                 const bottomPoints = [corners[2], corners[3]].sort((a, b) => a.x - b.x);
@@ -635,10 +679,10 @@
 
                 const dsize = new cv.Size(originalCanvas.width, originalCanvas.height);
                 let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                    sortedCorners[0].x * (originalCanvas.width / canvasOverlay.width), sortedCorners[0].y * (originalCanvas.height / canvasOverlay.height),
-                    sortedCorners[1].x * (originalCanvas.width / canvasOverlay.width), sortedCorners[1].y * (originalCanvas.height / canvasOverlay.height),
-                    sortedCorners[2].x * (originalCanvas.width / canvasOverlay.width), sortedCorners[2].y * (originalCanvas.height / canvasOverlay.height),
-                    sortedCorners[3].x * (originalCanvas.width / canvasOverlay.width), sortedCorners[3].y * (originalCanvas.height / canvasOverlay.height),
+                    sortedCorners[0].x, sortedCorners[0].y,
+                    sortedCorners[1].x, sortedCorners[1].y,
+                    sortedCorners[2].x, sortedCorners[2].y,
+                    sortedCorners[3].x, sortedCorners[3].y,
                 ]);
                 let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, dsize.width, 0, dsize.width, dsize.height, 0, dsize.height]);
                 let M = cv.getPerspectiveTransform(srcTri, dstTri);
@@ -720,7 +764,7 @@
             const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
             let html = '';
             for (let i = 0; i < sections.length; i += 2) {
-                const title = sections[i].replace(/:/g, ''); // 제목에서 콜론 제거
+                const title = sections[i].replace(/:/g, '');
                 const content = sections[i + 1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
                 html += `<div class="feedback-section mb-4"><h4>${title}</h4><p>${content}</p></div>`;
             }
@@ -837,4 +881,3 @@
     </script>
 </body>
 </html>
-
