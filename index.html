@@ -30,7 +30,7 @@
 <body class="bg-gray-50 text-gray-800">
 
     <!-- Header -->
-    <header class="bg-white/80 backdrop-blur-lg fixed top-0 left-0 right-0 z-50 shadow-sm">
+    <header class="bg-white/80 backdrop-blur-lg fixed top-0 left-0 right-0 z-40 shadow-sm">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex-shrink-0">
@@ -300,6 +300,40 @@
         </div>
     </footer>
 
+    <!-- Floating Chat Button -->
+    <div id="chat-container" class="fixed bottom-5 left-5 z-50">
+        <!-- Chat Window -->
+        <div id="chat-window" class="hidden absolute bottom-20 w-80 sm:w-96 bg-white rounded-lg shadow-2xl flex flex-col transition-all duration-300 origin-bottom-left">
+            <!-- Header -->
+            <div class="bg-indigo-600 text-white p-3 flex justify-between items-center rounded-t-lg cursor-pointer" id="chat-header">
+                <h3 class="font-bold">Artb 실시간 문의</h3>
+                <button id="close-chat-button" class="text-white text-2xl font-bold leading-none">&times;</button>
+            </div>
+            <!-- Messages -->
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto h-64">
+                <div class="mb-3">
+                    <p class="text-sm bg-gray-200 text-gray-800 p-3 rounded-lg inline-block max-w-xs">
+                        안녕하세요! Artb입니다. 무엇을 도와드릴까요?
+                    </p>
+                </div>
+            </div>
+            <!-- Input -->
+            <div class="p-2 border-t bg-gray-50 rounded-b-lg">
+                <form id="chat-form" class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." class="flex-1 p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" autocomplete="off">
+                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex-shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <!-- Chat Toggle Button -->
+        <button id="chat-toggle-button" class="bg-indigo-600 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-indigo-700 transition transform hover:scale-110 focus:outline-none">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+        </button>
+    </div>
+
+
     <script>
         // --- 모바일 메뉴 토글 로직 ---
         const mobileMenuButton = document.getElementById('mobile-menu-button');
@@ -564,6 +598,46 @@
                 console.error('사전 등록 오류:', error);
                 alert(error.message);
             }
+        });
+
+        // --- 실시간 채팅 기능 로직 ---
+        const chatToggleButton = document.getElementById('chat-toggle-button');
+        const chatWindow = document.getElementById('chat-window');
+        const closeChatButton = document.getElementById('close-chat-button');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        chatToggleButton.addEventListener('click', () => {
+            chatWindow.classList.toggle('hidden');
+        });
+
+        closeChatButton.addEventListener('click', () => {
+            chatWindow.classList.add('hidden');
+        });
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Display user message
+            const userMessageElem = document.createElement('div');
+            userMessageElem.className = 'mb-2 text-right';
+            userMessageElem.innerHTML = `<p class="text-sm bg-indigo-500 text-white p-3 rounded-lg inline-block max-w-xs">${message}</p>`;
+            chatMessages.appendChild(userMessageElem);
+
+            chatInput.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Simulate bot response
+            setTimeout(() => {
+                const botMessageElem = document.createElement('div');
+                botMessageElem.className = 'mb-3';
+                botMessageElem.innerHTML = `<p class="text-sm bg-gray-200 text-gray-800 p-3 rounded-lg inline-block max-w-xs">감사합니다! 담당자가 확인 후 빠르게 답변드리겠습니다. 급한 문의는 '문의하기' 폼을 이용해주세요.</p>`;
+                chatMessages.appendChild(botMessageElem);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 1500);
         });
 
         // 모바일 메뉴 링크 클릭 시 메뉴 닫기
