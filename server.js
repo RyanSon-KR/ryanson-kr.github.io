@@ -3,30 +3,43 @@ const express = require('express');
 const multer = require('multer');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit'); // 사용량 제한 라이브러리
 
 // Express 앱과 Multer (파일 업로드 처리용)를 설정합니다.
 const app = express();
 const upload = multer({ dest: 'uploads/' }); // 이미지를 임시 저장할 폴더
 
 // --- 중요 ---
-// 이곳에 당신의 Google AI Studio API 키를 입력하세요.
-// 키는 "..." 안에 실제 키를 붙여넣어야 합니다. (예: "AIzaSy...")
-const API_KEY = "YOUR_GOOGLE_AI_API_KEY"; 
+// 이 코드를 개인 리눅스 서버 같은 공개된 환경에 배포할 때는
+// 아래 코드 대신 4단계 가이드처럼 PM2나 환경 변수를 사용해 API 키를 설정하는 것이 안전합니다.
+const API_KEY = "YOUR_GOOGLE_AI_API_KEY"; // 당신의 Google AI Studio API 키를 입력하세요.
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// 기본 경로 ('/')로 접속했을 때 index.html 파일을 보여줍니다.
+
+// 사용량 제한 (Rate Limiter) 설정
+// 15분 동안 IP 주소당 100번의 요청만 허용합니다.
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // limit each IP to 100 requests per windowMs
+	standardHeaders: true,
+	legacyHeaders: false,
+    message: "요청 횟수가 너무 많습니다. 15분 후에 다시 시도해주세요.",
+});
+
+// 기본 경로 ('/')로 접속했을 때 index.html 파일을 보여주기 위해 현재 폴더를 정적 파일 폴더로 지정합니다.
+app.use(express.static(__dirname)); 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-// '/analyze' 경로로 이미지가 포함된 POST 요청이 왔을 때 AI 분석을 실행합니다.
-app.post('/analyze', upload.single('image'), async (req, res) => {
+// '/analyze' 경로로 오는 모든 요청에 사용량 제한 미들웨어를 적용합니다.
+app.post('/analyze', limiter, upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: "이미지 파일이 없습니다." });
         }
 
-        // Gemini AI 모델을 선택합니다. 'gemini-pro-vision'은 이미지와 텍스트를 함께 이해할 수 있는 모델입니다.
+        // Gemini AI 모델을 선택합니다.
         const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
         // AI에게 역할을 부여하고, 무엇을 분석할지 지시하는 프롬프트를 작성합니다.
@@ -70,3 +83,4 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
 });
+
