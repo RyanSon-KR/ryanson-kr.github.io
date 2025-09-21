@@ -222,7 +222,7 @@
             </div>
         </section>
 
-        <!-- Other sections... (Survey, Contact, CTA, Footer) -->
+        <!-- Survey Section -->
         <section id="survey" class="py-20 bg-white">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
@@ -231,7 +231,57 @@
                 </div>
                 <div id="survey-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
                     <form id="artb-survey-form" class="space-y-6">
-                        <!-- Survey form content -->
+                        <div>
+                            <label class="block text-lg font-semibold text-gray-700">1. 당신은 누구신가요?</label>
+                            <div class="mt-2 space-y-2">
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="artist_instructor" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" required>
+                                    <span class="ml-3 text-gray-700">현직 작가 또는 미술 강사</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="student_parent" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                    <span class="ml-3 text-gray-700">학생 또는 학부모</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="hobbyist" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                    <span class="ml-3 text-gray-700">미술에 관심있는 일반인</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="role" value="other" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                                    <span class="ml-3 text-gray-700">기타</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-lg font-semibold text-gray-700">2. Artb 서비스에서 가장 기대되는 기능은 무엇인가요? (중복 선택 가능)</label>
+                            <div class="mt-2 space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="interest" value="ai_feedback" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    <span class="ml-3 text-gray-700">AI 자동 피드백</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="interest" value="expert_feedback" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    <span class="ml-3 text-gray-700">전문가 1:1 피드백</span>
+                                </label>
+                                 <label class="flex items-center">
+                                    <input type="checkbox" name="interest" value="local_content" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    <span class="ml-3 text-gray-700">우리 지역 작가 콘텐츠</span>
+                                </label>
+                                 <label class="flex items-center">
+                                    <input type="checkbox" name="interest" value="portfolio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                    <span class="ml-3 text-gray-700">디지털 포트폴리오</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="feedback-text" class="block text-lg font-semibold text-gray-700">3. Artb에 바라는 점이나 궁금한 점을 자유롭게 남겨주세요.</label>
+                            <div class="mt-2">
+                                <textarea id="feedback-text" name="feedback_text" rows="4" class="shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2"></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">의견 제출하기</button>
+                        </div>
                     </form>
                 </div>
                 <div id="survey-thanks" class="hidden text-center bg-emerald-100 p-8 rounded-lg border border-emerald-300">
@@ -240,6 +290,7 @@
                 </div>
             </div>
         </section>
+        
         <section id="contact" class="py-20 bg-gray-100">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                  <div class="text-center mb-12">
@@ -248,7 +299,21 @@
                 </div>
                 <div id="contact-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
                     <form id="contact-form" class="space-y-6">
-                         <!-- Contact form content -->
+                        <div>
+                            <label for="contact-name" class="block text-lg font-semibold text-gray-700">이름</label>
+                            <input type="text" id="contact-name" name="name" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required>
+                        </div>
+                         <div>
+                            <label for="contact-email" class="block text-lg font-semibold text-gray-700">이메일</label>
+                            <input type="email" id="contact-email" name="email" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required>
+                        </div>
+                        <div>
+                            <label for="contact-message" class="block text-lg font-semibold text-gray-700">문의 내용</label>
+                            <textarea id="contact-message" name="message" rows="4" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required></textarea>
+                        </div>
+                        <div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">문의 보내기</button>
+                        </div>
                     </form>
                 </div>
                  <div id="contact-thanks" class="hidden text-center bg-emerald-100 p-8 rounded-lg border border-emerald-300">
@@ -257,6 +322,7 @@
                 </div>
             </div>
         </section>
+        
         <section id="cta" class="py-20 bg-white">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                  <div id="cta-container">
@@ -350,7 +416,6 @@
         let cvLoaded = false;
         let processVideoTimeout;
 
-        // This function is called by the opencv.js script tag's onload event
         function onOpenCvReady() {
             if (window.cv) {
                  if (cv instanceof Promise) {
@@ -550,10 +615,16 @@
         });
 
         function showCorrectionChoice(originalCanvas, corners) {
-            originalCanvas.toBlob(blob => { originalImageBlob = blob; }, 'image/jpeg');
-            choiceOriginalImageEl.src = originalCanvas.toDataURL('image/jpeg');
-
-            if (corners) {
+            originalCanvas.toBlob(blob => {
+                originalImageBlob = blob;
+                if (!corners) {
+                    console.log("자동 보정 실패, 원본 이미지로 분석을 시작합니다.");
+                    startAiAnalysis(originalImageBlob);
+                    return;
+                }
+                
+                choiceOriginalImageEl.src = originalCanvas.toDataURL('image/jpeg');
+                
                 let src = cv.imread(originalCanvas);
                 corners.sort((a, b) => a.y - b.y);
                 const topPoints = [corners[0], corners[1]].sort((a, b) => a.x - b.x);
@@ -578,13 +649,9 @@
                 correctedCanvas.toBlob(blob => { correctedImageBlob = blob; }, 'image/jpeg');
                 
                 src.delete(); dst.delete(); M.delete(); srcTri.delete(); dstTri.delete();
-                analyzeCorrectedBtn.disabled = false;
-            } else {
-                 choiceCorrectedImageEl.src = 'https://placehold.co/600x400/e2e8f0/94a3b8?text=Correction\nFailed';
-                 correctedImageBlob = originalImageBlob;
-                 analyzeCorrectedBtn.disabled = true;
-            }
-            correctionChoiceModal.classList.remove('hidden');
+                
+                correctionChoiceModal.classList.remove('hidden');
+            }, 'image/jpeg');
         }
 
         analyzeOriginalBtn.addEventListener('click', () => startAiAnalysis(originalImageBlob));
@@ -646,7 +713,7 @@
                 cameraError.classList.remove('hidden');
             }
         }
-
+        
         function formatFeedbackToHtml(text) {
             const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
             let html = '';
@@ -698,8 +765,69 @@
         });
         
         // --- Other form submissions ---
-        // The form submission logic remains the same.
+        const surveyForm = document.getElementById('artb-survey-form');
+        const surveyContainer = document.getElementById('survey-container');
+        const surveyThanks = document.getElementById('survey-thanks');
+
+        surveyForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(surveyForm);
+            const interests = formData.getAll('interest');
+            const data = { role: formData.get('role'), interests: interests, feedback_text: formData.get('feedback_text')};
+            try {
+                const response = await fetch(`${backendUrl}/survey`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                });
+                if (!response.ok) throw new Error('서버에 문제가 발생했습니다.');
+                surveyContainer.classList.add('hidden');
+                surveyThanks.classList.remove('hidden');
+            } catch (error) {
+                console.error('설문 제출 오류:', error);
+                alert('설문 제출에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            }
+        });
+
+        const contactForm = document.getElementById('contact-form');
+        const contactContainer = document.getElementById('contact-container');
+        const contactThanks = document.getElementById('contact-thanks');
+
+        contactForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(contactForm);
+            const data = Object.fromEntries(formData.entries());
+            try {
+                const response = await fetch(`${backendUrl}/contact`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                });
+                if (!response.ok) throw new Error('문의 제출에 실패했습니다.');
+                contactContainer.classList.add('hidden');
+                contactThanks.classList.remove('hidden');
+            } catch (error) {
+                console.error('문의 제출 오류:', error);
+                alert(error.message);
+            }
+        });
         
+        const preregisterForm = document.getElementById('preregister-form');
+        const ctaContainer = document.getElementById('cta-container');
+        const ctaThanks = document.getElementById('cta-thanks');
+
+        preregisterForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(preregisterForm);
+            const data = Object.fromEntries(formData.entries());
+            try {
+                const response = await fetch(`${backendUrl}/preregister`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                });
+                if (!response.ok) throw new Error('사전 등록에 실패했습니다.');
+                ctaContainer.classList.add('hidden');
+                ctaThanks.classList.remove('hidden');
+            } catch (error) {
+                console.error('사전 등록 오류:', error);
+                alert(error.message);
+            }
+        });
     </script>
 </body>
 </html>
