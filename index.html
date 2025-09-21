@@ -252,7 +252,7 @@
         </section>
 
         <!-- Contact Section -->
-        <section id="contact" class="py-20 bg-white">
+        <section id="contact" class="py-20 bg-gray-100">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold">궁금한 점이 있으신가요?</h2>
@@ -285,7 +285,7 @@
         </section>
 
         <!-- CTA Section -->
-        <section id="cta" class="py-20 bg-gray-100">
+        <section id="cta" class="py-20 bg-white">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <div id="cta-container">
                     <h2 class="text-3xl font-bold">새로운 미술 교육의 시작,<br>첫 번째 주인공이 되어주세요.</h2>
@@ -314,9 +314,9 @@
 
     <script>
         // --- 중요 ---
-        // 백엔드 서버를 Render.com에 배포한 후, 발급받은 실제 서버 주소로 이 값을 변경해야 합니다.
-        // 예시: const backendUrl = 'https://artb-backend.onrender.com';
-        const backendUrl = 'https://artb-backend.vercel.app'; // 실제 주소
+        // 백엔드 서버를 Vercel에 배포한 후, 발급받은 실제 서버 주소로 이 값을 변경해야 합니다.
+        // 예시: const backendUrl = 'https://artb-backend.vercel.app';
+        const backendUrl = 'https://artb-backend.vercel.app'; // Vercel 배포 주소로 수정
 
         // --- 모바일 메뉴 토글 로직 ---
         const mobileMenuButton = document.getElementById('mobile-menu-button');
@@ -350,6 +350,10 @@
             document.getElementById('style-result').classList.add('hidden');
             
             try {
+                // HTTPS 환경에서만 카메라 접근이 가능합니다.
+                if (location.protocol !== 'https:') {
+                    throw new Error('카메라는 HTTPS 환경에서만 작동합니다.');
+                }
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 cameraView.classList.remove('hidden');
                 startCameraButton.textContent = '카메라 재시작';
@@ -357,7 +361,7 @@
                 videoElement.onloadedmetadata = () => resizeCanvas();
             } catch (err) {
                 console.error("카메라 접근 오류:", err);
-                cameraError.textContent = "카메라에 접근할 수 없습니다. 브라우저의 카메라 권한을 확인해주세요.";
+                cameraError.textContent = err.message || "카메라에 접근할 수 없습니다. 브라우저의 카메라 권한을 확인해주세요.";
                 cameraError.classList.remove('hidden');
                 cameraView.classList.add('hidden');
             }
