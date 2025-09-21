@@ -313,6 +313,9 @@
 
 
     <script>
+        // 백엔드 서버 주소 (Render.com 배포 후 실제 주소로 변경 필요)
+        const backendUrl = 'https://artb-backend.onrender.com';
+
         // --- 모바일 메뉴 토글 로직 ---
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileMenu = document.getElementById('mobile-menu');
@@ -457,7 +460,7 @@
             formData.append('image', imageBlob, 'artwork.jpg');
 
             try {
-                const response = await fetch('/analyze', {
+                const response = await fetch(`${backendUrl}/analyze`, {
                     method: 'POST',
                     body: formData,
                 });
@@ -513,7 +516,7 @@
             formData.append('image', lastImageBlob, 'artwork.jpg');
 
             try {
-                const response = await fetch('/analyze-style', {
+                const response = await fetch(`${backendUrl}/analyze-style`, {
                     method: 'POST',
                     body: formData,
                 });
@@ -550,7 +553,7 @@
             };
 
             try {
-                const response = await fetch('/survey', {
+                const response = await fetch(`${backendUrl}/survey`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -582,7 +585,7 @@
             const data = Object.fromEntries(formData.entries());
 
             try {
-                const response = await fetch('/contact', {
+                const response = await fetch(`${backendUrl}/contact`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
@@ -608,7 +611,7 @@
             const data = Object.fromEntries(formData.entries());
 
             try {
-                const response = await fetch('/preregister', {
+                const response = await fetch(`${backendUrl}/preregister`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
