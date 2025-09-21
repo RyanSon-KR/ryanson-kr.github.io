@@ -183,7 +183,7 @@
         </section>
         
         <!-- Survey Section -->
-        <section id="survey" class="py-20 bg-gray-100">
+        <section id="survey" class="py-20 bg-white">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold">더 나은 Artb를 위해, 당신의 목소리를 들려주세요</h2>
@@ -313,8 +313,10 @@
 
 
     <script>
-        // 백엔드 서버 주소 (Render.com 배포 후 실제 주소로 변경 필요)
-        const backendUrl = 'https://artb-backend.vercel.app';
+        // --- 중요 ---
+        // 백엔드 서버를 Render.com에 배포한 후, 발급받은 실제 서버 주소로 이 값을 변경해야 합니다.
+        // 예시: const backendUrl = 'https://artb-backend.onrender.com';
+        const backendUrl = 'http://localhost:3000'; // 로컬 테스트용 주소
 
         // --- 모바일 메뉴 토글 로직 ---
         const mobileMenuButton = document.getElementById('mobile-menu-button');
