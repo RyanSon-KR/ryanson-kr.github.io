@@ -151,9 +151,20 @@
                                 <p class="font-bold text-sky-800">🤖 AI 1차 피드백</p>
                                 <p id="ai-feedback-text"></p>
                             </div>
-                            <div id="expert-feedback-info" class="info-box bg-emerald-50 border-emerald-400">
+                             <div id="expert-feedback-info" class="info-box bg-emerald-50 border-emerald-400">
                                 <p class="font-bold text-emerald-800">👩‍🏫 전문가 최종 피드백</p>
                                 <p>실제 서비스에서는 24시간 내에 전문가의 깊이 있는 피드백이 이 곳에 표시됩니다!</p>
+                            </div>
+                            <!-- AI Style Analysis Feature -->
+                            <div id="style-analysis-container" class="mt-4">
+                                <button id="styleAnalysisButton" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition text-lg">✨ 내 그림 스타일 분석하기</button>
+                                <div id="style-loading" class="hidden text-center p-4">
+                                    <p>AI가 작품의 스타일을 분석 중입니다...</p>
+                                </div>
+                                <div id="style-result" class="hidden mt-4 info-box bg-purple-50 border-purple-400">
+                                    <p class="font-bold text-purple-800">🎨 AI 스타일 분석</p>
+                                    <p id="style-result-text"></p>
+                                </div>
                             </div>
                         </div>
 
@@ -300,39 +311,6 @@
         </div>
     </footer>
 
-    <!-- Floating Chat Button -->
-    <div id="chat-container" class="fixed bottom-5 left-5 z-50">
-        <!-- Chat Window -->
-        <div id="chat-window" class="hidden absolute bottom-20 w-80 sm:w-96 bg-white rounded-lg shadow-2xl flex flex-col transition-all duration-300 origin-bottom-left">
-            <!-- Header -->
-            <div class="bg-indigo-600 text-white p-3 flex justify-between items-center rounded-t-lg cursor-pointer" id="chat-header">
-                <h3 class="font-bold">Artb 실시간 문의</h3>
-                <button id="close-chat-button" class="text-white text-2xl font-bold leading-none">&times;</button>
-            </div>
-            <!-- Messages -->
-            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto h-64">
-                <div class="mb-3">
-                    <p class="text-sm bg-gray-200 text-gray-800 p-3 rounded-lg inline-block max-w-xs">
-                        안녕하세요! Artb입니다. 무엇을 도와드릴까요?
-                    </p>
-                </div>
-            </div>
-            <!-- Input -->
-            <div class="p-2 border-t bg-gray-50 rounded-b-lg">
-                <form id="chat-form" class="flex gap-2">
-                    <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." class="flex-1 p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500" autocomplete="off">
-                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                    </button>
-                </form>
-            </div>
-        </div>
-        <!-- Chat Toggle Button -->
-        <button id="chat-toggle-button" class="bg-indigo-600 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:bg-indigo-700 transition transform hover:scale-110 focus:outline-none">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-        </button>
-    </div>
-
 
     <script>
         // --- 모바일 메뉴 토글 로직 ---
@@ -354,6 +332,7 @@
         const loading = document.getElementById('loading');
         const cameraError = document.getElementById('camera-error');
         let stream = null;
+        let lastImageBlob = null; // 마지막으로 캡처한 이미지 저장
 
         // 1. 카메라 시작
         startCameraButton.addEventListener('click', async () => {
@@ -362,6 +341,8 @@
             }
             cameraError.classList.add('hidden');
             resultSection.classList.add('hidden');
+             document.getElementById('style-analysis-container').classList.add('hidden');
+            document.getElementById('style-result').classList.add('hidden');
             
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -419,6 +400,7 @@
             cameraError.classList.add('hidden');
             
             canvas.toBlob(blob => {
+                lastImageBlob = blob; // 스타일 분석을 위해 이미지 저장
                 submitForAnalysis(blob);
             }, 'image/jpeg');
 
@@ -508,7 +490,48 @@
             resultSection.classList.remove('hidden');
             document.getElementById('processedImage').src = data.processed_image_url;
             document.getElementById('ai-feedback-text').textContent = data.ai_feedback.feedback_text;
+            document.getElementById('style-analysis-container').classList.remove('hidden');
         }
+        
+        // --- ✨ AI 스타일 분석 기능 ---
+        const styleAnalysisButton = document.getElementById('styleAnalysisButton');
+        const styleLoading = document.getElementById('style-loading');
+        const styleResult = document.getElementById('style-result');
+        const styleResultText = document.getElementById('style-result-text');
+
+        styleAnalysisButton.addEventListener('click', async () => {
+            if (!lastImageBlob) {
+                alert('먼저 작품을 촬영해주세요.');
+                return;
+            }
+
+            styleLoading.classList.remove('hidden');
+            styleResult.classList.add('hidden');
+            styleAnalysisButton.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', lastImageBlob, 'artwork.jpg');
+
+            try {
+                const response = await fetch('/analyze-style', {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (!response.ok) throw new Error('스타일 분석에 실패했습니다.');
+
+                const result = await response.json();
+                styleResultText.textContent = result.style_feedback;
+                styleResult.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('스타일 분석 오류:', error);
+                alert(error.message);
+            } finally {
+                styleLoading.classList.add('hidden');
+                styleAnalysisButton.disabled = false;
+            }
+        });
+
 
         // --- 설문조사 기능 JavaScript 로직 ---
         const surveyForm = document.getElementById('artb-survey-form');
@@ -599,47 +622,7 @@
                 alert(error.message);
             }
         });
-
-        // --- 실시간 채팅 기능 로직 ---
-        const chatToggleButton = document.getElementById('chat-toggle-button');
-        const chatWindow = document.getElementById('chat-window');
-        const closeChatButton = document.getElementById('close-chat-button');
-        const chatForm = document.getElementById('chat-form');
-        const chatInput = document.getElementById('chat-input');
-        const chatMessages = document.getElementById('chat-messages');
-
-        chatToggleButton.addEventListener('click', () => {
-            chatWindow.classList.toggle('hidden');
-        });
-
-        closeChatButton.addEventListener('click', () => {
-            chatWindow.classList.add('hidden');
-        });
-
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = chatInput.value.trim();
-            if (!message) return;
-
-            // Display user message
-            const userMessageElem = document.createElement('div');
-            userMessageElem.className = 'mb-2 text-right';
-            userMessageElem.innerHTML = `<p class="text-sm bg-indigo-500 text-white p-3 rounded-lg inline-block max-w-xs">${message}</p>`;
-            chatMessages.appendChild(userMessageElem);
-
-            chatInput.value = '';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            // Simulate bot response
-            setTimeout(() => {
-                const botMessageElem = document.createElement('div');
-                botMessageElem.className = 'mb-3';
-                botMessageElem.innerHTML = `<p class="text-sm bg-gray-200 text-gray-800 p-3 rounded-lg inline-block max-w-xs">감사합니다! 담당자가 확인 후 빠르게 답변드리겠습니다. 급한 문의는 '문의하기' 폼을 이용해주세요.</p>`;
-                chatMessages.appendChild(botMessageElem);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, 1500);
-        });
-
+        
         // 모바일 메뉴 링크 클릭 시 메뉴 닫기
         document.querySelectorAll('.mobile-menu-link').forEach(link => {
             link.addEventListener('click', () => {
