@@ -7,6 +7,7 @@
     <link rel="icon" href="ArtB_logo.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.8/dist/web/static/pretendard.css">
+    <link rel="stylesheet" href="/style.css">
     
     <script>
         let cvLoaded = false;
@@ -31,199 +32,12 @@
             console.log("OpenCV.js is ready.");
             cvLoaded = true;
             
-            const startCameraButton = document.getElementById('startCameraButton');
-            if (startCameraButton) {
-                startCameraButton.disabled = false;
-                startCameraButton.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    카메라로 촬영
-                `;
-            }
+            // script.js가 로드된 후 실행될 이벤트를 발생시킵니다.
+            document.dispatchEvent(new Event('opencv-ready'));
         }
     </script>
     <!-- OpenCV.js: 실시간 이미지 처리를 위한 라이브러리 -->
     <script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()"></script>
-    
-    <style>
-        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #0f172a;}
-        .hero-gradient { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); }
-        .info-box { background-color: #ffffff; border-left: 4px solid #4f46e5; padding: 1.5rem; margin-bottom: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
-        .feature-icon {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        }
-        .demo-container {
-            position: relative;
-            overflow: hidden;
-            background-color: #1e293b;
-        }
-        #canvasOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-        /* 팝업 및 모달 스타일 */
-        .modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(15, 23, 42, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            backdrop-filter: blur(4px);
-        }
-        .modal-content {
-            background-color: white;
-            padding: 1.5rem; /* 모바일 패딩 조정 */
-            border-radius: 0.75rem;
-            max-width: 90%;
-            width: 600px;
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-        }
-        @media (min-width: 640px) {
-            .modal-content {
-                padding: 2rem; /* 데스크탑 패딩 */
-            }
-        }
-         .progress-step {
-            display: flex;
-            align-items: center;
-            opacity: 0.5;
-            transition: opacity 0.3s ease-in-out;
-        }
-        .progress-step.active {
-            opacity: 1;
-        }
-        .progress-step .icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-right: 1rem;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .progress-step.pending .icon { background-color: #e5e7eb; color: #6b7280; }
-        .progress-step.active .icon { background-color: #4f46e5; color: white; }
-        .progress-step.completed .icon { background-color: #10b981; color: white; }
-        
-        /* 피드백 서식 스타일 */
-        .evaluation-item {
-            background-color: #f8fafc;
-            border-radius: 0.5rem;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 1rem;
-        }
-        .evaluation-header {
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-        }
-        .evaluation-details {
-            padding: 0 1rem 1rem 1rem;
-            line-height: 1.75;
-            color: #475569;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.5s ease-in-out, padding-top 0.5s ease-in-out;
-        }
-        .evaluation-details.open {
-            max-height: 500px; /* 충분한 높이 */
-            padding-top: 1rem;
-            border-top: 1px solid #e2e8f0;
-        }
-        .evaluation-item-title {
-            font-weight: 600;
-            color: #1e293b;
-        }
-        .evaluation-score {
-            font-weight: bold;
-            color: #4f46e5;
-        }
-        .toggle-arrow {
-            transition: transform 0.3s;
-        }
-        .toggle-arrow.open {
-            transform: rotate(180deg);
-        }
-        .keyword-tag {
-            background-color: #e0e7ff;
-            color: #4338ca;
-            font-size: 0.875rem;
-            font-weight: 500;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-        }
-
-        /* 스크롤 애니메이션 효과 */
-        .scroll-fade-in {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-        }
-        .scroll-fade-in.is-visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        
-        /* 드래그 앤 드롭 영역 스타일 */
-        #drop-zone {
-            border: 2px dashed #94a3b8;
-            transition: background-color 0.2s, border-color 0.2s;
-        }
-        #drop-zone.dragover {
-            background-color: #e0e7ff;
-            border-color: #4f46e5;
-        }
-        
-        /* 포트폴리오 갤러리 스타일 */
-        .portfolio-item {
-            position: relative;
-            overflow: hidden;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            aspect-ratio: 1 / 1;
-        }
-        .portfolio-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        .portfolio-item:hover img {
-            transform: scale(1.05);
-        }
-        .portfolio-item .overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            color: white;
-            padding: 1.5rem 1rem 1rem;
-            font-weight: bold;
-            text-align: left;
-        }
-        .color-swatch {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
-            display: inline-block;
-            margin-right: 0.5rem;
-            vertical-align: middle;
-        }
-    </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
 
@@ -262,7 +76,7 @@
     <main class="pt-16">
         <!-- Hero Section -->
         <section class="hero-gradient py-24 sm:py-32">
-             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 leading-tight tracking-tighter">
                     AI와 진짜 전문가가 만나는 곳,<br class="hidden sm:block"> 당신의 잠재력을 깨우는 시간
                 </h1>
@@ -276,8 +90,8 @@
         </section>
 
         <!-- Features Section -->
-        <section id="features" class="py-24 bg-white">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="features" class="py-24 bg-white scroll-fade-in">
+             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-4xl font-bold tracking-tighter">무엇이 Artb를 특별하게 만드나요?</h2>
                     <p class="text-slate-600 mt-4 max-w-2xl mx-auto">Artb는 기술의 정밀함과 사람의 온기를 결합하여 최상의 학습 경험을 제공합니다.</p>
@@ -312,7 +126,7 @@
         </section>
         
         <!-- How We're Different Section -->
-        <section id="difference" class="py-24 bg-slate-100">
+        <section id="difference" class="py-24 bg-slate-100 scroll-fade-in">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-4xl font-bold tracking-tighter">Artb 피드백은 무엇이 다른가요?</h2>
@@ -347,7 +161,7 @@
 
 
         <!-- Demo Section -->
-        <section id="demo" class="py-24">
+        <section id="demo" class="py-24 scroll-fade-in">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl md:text-4xl font-bold tracking-tighter">백문이 불여일견, 직접 경험해보세요</h2>
@@ -422,7 +236,7 @@
         </section>
 
         <!-- Digital Portfolio Demo Section -->
-        <section id="portfolio-demo" class="py-24 bg-white">
+        <section id="portfolio-demo" class="py-24 bg-white scroll-fade-in">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-4xl font-bold tracking-tighter">나의 성장 과정을 한눈에, 디지털 포트폴리오</h2>
@@ -436,7 +250,7 @@
 
 
         <!-- Survey Section -->
-        <section id="survey" class="py-24 bg-slate-100">
+        <section id="survey" class="py-24 bg-slate-100 scroll-fade-in">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl md:text-4xl font-bold tracking-tighter">더 나은 Artb를 위해, 당신의 목소리를 들려주세요</h2>
@@ -563,12 +377,111 @@
     </footer>
 
     <!-- All Modals -->
-    <div id="correction-choice-modal" class="modal-backdrop hidden"><!-- ... --></div>
-    <div id="feedback-progress-modal" class="modal-backdrop hidden"><!-- ... --></div>
-    <div id="modal-ai" class="modal-backdrop hidden"><!-- ... --></div>
-    <div id="modal-expert" class="modal-backdrop hidden"><!-- ... --></div>
-    <div id="modal-portfolio" class="modal-backdrop hidden"><!-- ... --></div>
-    <div id="portfolio-comparison-modal" class="modal-backdrop hidden"><!-- ... --></div>
+    <div id="correction-choice-modal" class="modal-backdrop hidden">
+        <div class="modal-content text-center">
+            <h3 class="text-2xl font-bold mb-4">어떤 이미지로 분석할까요?</h3>
+            <p class="text-slate-600 mb-6">AI가 왜곡을 자동 보정했습니다. 원본과 보정본 중 분석에 사용할 이미지를 선택해주세요.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <h4 class="font-semibold mb-2">원본 이미지</h4>
+                    <img id="choice-original-image" class="w-full h-auto rounded-md border" />
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2">보정된 이미지</h4>
+                    <img id="choice-corrected-image" class="w-full h-auto rounded-md border" />
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button id="analyze-original-btn" class="w-full bg-slate-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-600 transition">원본으로 분석</button>
+                <button id="analyze-corrected-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition">보정본으로 분석</button>
+            </div>
+        </div>
+    </div>
+    <div id="feedback-progress-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <h3 class="text-2xl font-bold mb-2 text-center">AI가 그림을 분석하고 있습니다</h3>
+            <div class="w-full bg-slate-200 rounded-full h-2.5 mb-4">
+                <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%; transition: width 0.5s ease-in-out;"></div>
+            </div>
+            <p id="progress-text" class="text-center text-slate-600 mb-6">진행도: 0%</p>
+            <div class="space-y-4">
+                 <div id="step1" class="progress-step pending">
+                    <div class="icon">🖼️</div><p>AI 분석 요청</p>
+                </div>
+                <div id="step2" class="progress-step pending">
+                    <div class="icon">🧠</div><p>구도 및 형태 평가</p>
+                </div>
+                 <div id="step3" class="progress-step pending">
+                    <div class="icon">🎨</div><p>명암 및 채색 평가</p>
+                </div>
+                 <div id="step4" class="progress-step pending">
+                    <div class="icon">✍️</div><p>최종 피드백 생성</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="modal-ai" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">🤖 AI 즉각 피드백</h3>
+                <button class="modal-close-btn text-3xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <p class="text-slate-600 leading-relaxed">
+                그림을 제출하는 즉시 Artb의 AI가 구도, 명암, 형태, 비율 등 미술의 기초가 되는 핵심 요소들을 정밀하게 분석합니다. 마치 24시간 대기하는 개인 교사처럼, 기초를 탄탄하게 다질 수 있도록 도와주어 성장의 발판을 마련합니다.
+            </p>
+        </div>
+    </div>
+    <div id="modal-expert" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">👩‍🏫 전문가 최종 피드백</h3>
+                <button class="modal-close-btn text-3xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+             <p class="text-slate-600 leading-relaxed mb-4">
+                Artb의 전문가 피드백은 AI의 객관적인 데이터를 기반으로, 사람만이 할 수 있는 깊이 있는 통찰력을 더하는 과정입니다.
+            </p>
+            <ol class="list-decimal list-inside space-y-2 text-left text-slate-600">
+                <li><strong>AI 1차 분석:</strong> 먼저 AI가 제출된 작품의 기술적인 측면(구도, 명암 등)을 분석하여 리포트를 생성합니다.</li>
+                <li><strong>전문가 검토:</strong> 배정된 전문가는 이 AI 리포트를 참고하여, 기술적 분석을 넘어서는 작품의 창의성, 표현력, 작가의 의도, 예술적 잠재력 등을 파악합니다.</li>
+                <li><strong>종합 멘토링:</strong> AI가 놓칠 수 있는 감성적인 부분과 학생의 성장 가능성에 초점을 맞춘 최종 피드백을 작성하여 전달합니다.</li>
+            </ol>
+        </div>
+    </div>
+    <div id="modal-portfolio" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold">🖼️ 디지털 포트폴리오</h3>
+                <button class="modal-close-btn text-3xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
+            </div>
+            <p class="text-slate-600 leading-relaxed">
+                당신이 제출한 모든 그림과 AI 및 전문가로부터 받은 피드백은 계정에 안전하게 기록됩니다. 시간이 지남에 따라 나의 실력이 어떻게 향상되었는지 한눈에 볼 수 있으며, 이 기록들은 입시나 개인 작품집으로 활용할 수 있는 소중한 자산이 됩니다.
+            </p>
+        </div>
+    </div>
+    <div id="portfolio-comparison-modal" class="modal-backdrop hidden">
+        <div class="modal-content relative max-w-5xl w-full">
+            <button id="close-comparison-modal" class="absolute top-4 right-4 text-3xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
+            <h3 class="text-2xl font-bold mb-6 text-center">성장 기록: 작품 2</h3>
+            <div class="grid md:grid-cols-2 gap-6 items-start">
+                <div>
+                    <h4 class="text-xl font-semibold mb-2">수정 전 원본</h4>
+                    <img id="comparison-original-image" class="w-full h-auto rounded-lg border" />
+                    <div class="mt-4 info-box !bg-white">
+                        <p class="font-bold text-sky-800">🤖 최초 AI 피드백</p>
+                        <div id="comparison-initial-feedback"></div>
+                    </div>
+                </div>
+                <div>
+                     <h4 class="text-xl font-semibold mb-2">피드백 반영 후</h4>
+                     <img id="comparison-revised-image" class="w-full h-auto rounded-lg border" />
+                     <div class="mt-4 info-box bg-emerald-50 border-emerald-400">
+                        <p class="font-bold text-emerald-800">📈 AI 성장 분석</p>
+                        <div id="comparison-improvement-feedback"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="script.js" defer></script>
 </body>
