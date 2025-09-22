@@ -116,6 +116,34 @@ body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: 
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
 }
+.feedback-item {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+}
+.feedback-item:last-child {
+    margin-bottom: 0;
+}
+.feedback-item h4 {
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    margin-bottom: 0.75rem;
+}
+ .feedback-item h4 svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+.feedback-item p {
+    color: #334155;
+    line-height: 1.75;
+    padding-left: 2rem;
+}
 
 /* 스크롤 애니메이션 효과 */
 .scroll-fade-in {
