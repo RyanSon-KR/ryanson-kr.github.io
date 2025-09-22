@@ -4,6 +4,7 @@ if (location.protocol === 'http:' && location.hostname !== 'localhost') {
 }
 
 // --- 중요 ---
+// 백엔드 서버를 Vercel에 배포한 후, 발급받은 실제 서버 주소로 이 값을 변경해야 합니다.
 const backendUrl = 'https://artb-backend.vercel.app';
 
 // --- 전역 변수 및 DOM 요소 ---
@@ -709,3 +710,4 @@ portfolioModal.addEventListener('click', (e) => {
     </script>
 </body>
 </html>
+
