@@ -75,33 +75,29 @@
         .progress-step.completed .icon { background-color: #10b981; color: white; }
         
         /* 피드백 서식 스타일 */
-        .feedback-item {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1.25rem;
-        }
-        .feedback-item:last-child {
-            margin-bottom: 0;
-        }
-        .feedback-item h4 {
+        .evaluation-item {
             display: flex;
-            align-items: center;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #312e81;
-            margin-bottom: 0.75rem;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
         }
-         .feedback-item h4 svg {
-            width: 1.25rem;
-            height: 1.25rem;
-            margin-right: 0.75rem;
+        .evaluation-item-title {
+            font-weight: 600;
+            color: #1e293b;
+            width: 130px;
             flex-shrink: 0;
         }
-        .feedback-item p {
-            color: #334155;
+        .evaluation-item-content {
+            flex-grow: 1;
+            color: #475569;
             line-height: 1.75;
-            padding-left: 2rem;
+        }
+        .evaluation-score {
+            font-weight: bold;
+            color: #4f46e5;
         }
         .keyword-tag {
             background-color: #e0e7ff;
@@ -170,30 +166,6 @@
             display: inline-block;
             margin-right: 0.5rem;
             vertical-align: middle;
-        }
-        
-        .evaluation-item {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-            padding: 1rem;
-            background-color: #f8fafc;
-            border-radius: 0.5rem;
-            border: 1px solid #e2e8f0;
-        }
-        .evaluation-item-title {
-            font-weight: 600;
-            color: #1e293b;
-            width: 130px;
-            flex-shrink: 0;
-        }
-        .evaluation-item-content {
-            flex-grow: 1;
-            color: #475569;
-        }
-        .evaluation-score {
-            font-weight: bold;
-            color: #4f46e5;
         }
 
     </style>
@@ -1108,56 +1080,51 @@
         
         function formatFeedbackToHtml(text, containerId) {
             const container = document.getElementById(containerId);
-            if(!container) return;
-
-            const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
+            if (!container) return;
+            
+            // New parser for the professional evaluation format
+            const evaluationRegex = /\[(.*?)\]\s*-\s*(.*)|(👉\s*\*\*종합 평가:\s*(.*?)\*\*)|(\*\*총평:\*\*\s*(.*))/;
+            const lines = text.split('\n').filter(line => line.trim() !== '');
             let html = '';
-            let keywordsContainer = container.nextElementSibling;
-            let keywords = [];
             
-            const keywordMarker = "Keywords:";
-            
-            for (let i = 0; i < sections.length; i += 2) {
-                const title = sections[i].replace(/:/g, '');
-                let content = sections[i + 1].trim();
-
-                const keywordIndex = content.indexOf(keywordMarker);
-                if (keywordIndex !== -1) {
-                    const keywordLine = content.substring(keywordIndex);
-                    content = content.substring(0, keywordIndex).trim();
-                    keywords = keywordLine.replace(keywordMarker, '').split(',').map(k => k.trim().replace(/^#/, '')).filter(k => k);
+            lines.forEach(line => {
+                const match = line.match(evaluationRegex);
+                if (match) {
+                    const [, title, content, , totalScore, , summary] = match;
+                    if (title) {
+                        const scoreRegex = /(.*?):\s*(\d+\.?\d*)\/10/;
+                        const titleScoreMatch = title.match(scoreRegex);
+                        if (titleScoreMatch) {
+                             html += `<div class="evaluation-item">
+                                <span class="evaluation-item-title">${titleScoreMatch[1].trim()}</span>
+                                <div class="evaluation-item-content">
+                                    <span class="evaluation-score">${titleScoreMatch[2]}/10</span> - ${content.trim()}
+                                </div>
+                            </div>`;
+                        } else {
+                            html += `<div class="evaluation-item">
+                                <span class="evaluation-item-title">${title.trim()}</span>
+                                <div class="evaluation-item-content">${content.trim()}</div>
+                            </div>`;
+                        }
+                    } else if (totalScore) {
+                        html += `<div class="mt-6 pt-4 border-t border-slate-200 text-center">
+                                    <h4 class="text-lg font-semibold text-slate-700">종합 평가</h4>
+                                    <p class="text-3xl font-bold text-indigo-600 mt-2">${totalScore}</p>
+                                 </div>`;
+                    } else if (summary) {
+                         html += `<div class="mt-4 text-center"><p class="text-slate-600">${summary}</p></div>`;
+                    }
                 }
-                
-                content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-                
-                html += `<div class="feedback-item"><h4>${getIconForTitle(title)}${title}</h4><p>${content}</p></div>`;
-            }
+            });
             container.innerHTML = html;
-
-            if (keywordsContainer && keywords.length > 0) {
-                keywordsContainer.innerHTML = keywords.map(k => `<span class="keyword-tag">#${k}</span>`).join('');
-            }
-        }
-        
-        function getIconForTitle(title) {
-             const icons = {
-                '총평': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-13a.75.75 0 00-1.5 0v5c0 .414.336.75.75.75h4a.75.75 0 000-1.5h-3.25V5z" clip-rule="evenodd" /></svg>`,
-                '잘한 점': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M1 8.25a1.25 1.25 0 112.5 0v7.5a1.25 1.25 0 11-2.5 0v-7.5zM11 8.25a1.25 1.25 0 112.5 0v7.5a1.25 1.25 0 11-2.5 0v-7.5zM5 8.25a1.25 1.25 0 112.5 0v7.5a1.25 1.25 0 11-2.5 0v-7.5zM15 8.25a1.25 1.25 0 112.5 0v7.5a1.25 1.25 0 11-2.5 0v-7.5z"></path></svg>`,
-                '보완할 점': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M10 2c-1.717 0-3.415.36-4.992 1.059a.75.75 0 00-.516 1.07l.228.49a.75.75 0 001.07.516A6.47 6.47 0 0110 4.5a.75.75 0 000-1.5ZM5.524 4.627a.75.75 0 00-1.07-.516L4.226 4.3a.75.75 0 00-.516 1.07A7.966 7.966 0 002.25 10a.75.75 0 001.5 0 6.47 6.47 0 011.774-4.373zM15.546 4.11a.75.75 0 00-1.07.516l.228.49a.75.75 0 001.07-.516A6.47 6.47 0 0115.75 10a.75.75 0 001.5 0 7.966 7.966 0 00-1.704-5.89zM10 0a.75.75 0 00-1.5 0v2a.75.75 0 001.5 0V0zM8.25 10a.75.75 0 000 1.5h3.5a.75.75 0 000-1.5h-3.5zM10 18a7.963 7.963 0 004.992-1.648l.228.49a.75.75 0 101.07-.516l-.228-.49A7.963 7.963 0 0010 14a7.963 7.963 0 00-4.992 1.648l-.228.49a.75.75 0 101.07.516l.228-.49A7.963 7.963 0 0010 18z" clip-rule="evenodd" /></svg>`,
-                '작품 스타일': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10.75 10.84l3.14-3.14a.75.75 0 10-1.06-1.06l-3.14 3.14-1.22-1.22a.75.75 0 00-1.06 1.06l1.75 1.75a.75.75 0 001.06 0l3.5-3.5a.75.75 0 00-1.06-1.06l-3.01 3.01-.73-.73a.75.75 0 00-1.06 1.06l1.25 1.25a.75.75 0 001.06 0zM5.11 7.15A4.492 4.492 0 0110 5.25a4.492 4.492 0 014.89 1.9 2.5 2.5 0 11-2.31 3.99A4.488 4.488 0 0110 9.25a4.488 4.488 0 01-2.69-1.01 2.5 2.5 0 11-2.199-1.09z"></path></svg>`,
-                '비슷한 작가 추천': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.796 0 5.4-1.188 7.126-3.095a1.23 1.23 0 00.41-1.412A8.962 8.962 0 0010 11.5c-2.455 0-4.793.818-6.535 2.993z"></path></svg>`,
-                '주요 색상 분석': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10 3a.75.75 0 01.75.75v.518a3 3 0 012.335 2.335h.518a.75.75 0 010 1.5h-.518a3 3 0 01-2.335 2.335v.518a.75.75 0 01-1.5 0v-.518a3 3 0 01-2.335-2.335H6.25a.75.75 0 010-1.5h.518a3 3 0 012.335-2.335V3.75A.75.75 0 0110 3zM8.75 6.25a.75.75 0 00-1.5 0v.518a3 3 0 00-2.335 2.335H4.4a.75.75 0 000 1.5h.518a3 3 0 002.335 2.335v.518a.75.75 0 001.5 0v-.518a3 3 0 002.335-2.335h.518a.75.75 0 000-1.5h-.518a3 3 0 00-2.335-2.335V6.25zM12.25 11.75a.75.75 0 00-1.5 0v.518a3 3 0 00-2.335 2.335h-.518a.75.75 0 000 1.5h.518a3 3 0 002.335 2.335v.518a.75.75 0 001.5 0v-.518a3 3 0 002.335-2.335h.518a.75.75 0 000-1.5h-.518a3 3 0 00-2.335-2.335v-.518z"></path></svg>`,
-             };
-             return icons[title] || '';
         }
         
         function displayResults(data) {
             resultSection.classList.remove('hidden');
             document.getElementById('processedImage').src = data.processed_image_url;
             
-            const feedbackTextContainer = document.getElementById('ai-feedback-text');
-            const keywordsContainer = document.getElementById('ai-feedback-keywords');
-            formatFeedbackToHtml(data.ai_feedback.feedback_text, feedbackTextContainer, keywordsContainer);
+            formatFeedbackToHtml(data.ai_feedback.feedback_text, 'ai-feedback-text');
             
             document.getElementById('style-analysis-container').classList.remove('hidden');
             document.getElementById('style-result').classList.add('hidden');
@@ -1187,7 +1154,7 @@
                     throw new Error(`스타일 분석에 실패했습니다: ${errorData.error || response.statusText}`);
                 }
                 const result = await response.json();
-                formatFeedbackToHtml(result.style_feedback, styleResultText, styleResultKeywords);
+                formatFeedbackToHtml(result.style_feedback, 'style-result-text');
                 styleResult.classList.remove('hidden');
             } catch (error) {
                 console.error('스타일 분석 오류:', error);
