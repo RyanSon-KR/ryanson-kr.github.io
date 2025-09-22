@@ -1019,6 +1019,34 @@
         document.querySelectorAll('.scroll-fade-in').forEach(el => {
             scrollObserver.observe(el);
         });
+
+        // --- Feature Modals Logic ---
+        const featureAi = document.getElementById('feature-ai');
+        const featureExpert = document.getElementById('feature-expert');
+        const featurePortfolio = document.getElementById('feature-portfolio');
+        const modalAi = document.getElementById('modal-ai');
+        const modalExpert = document.getElementById('modal-expert');
+        const modalPortfolio = document.getElementById('modal-portfolio');
+
+        function openModal(modal) { modal.classList.remove('hidden'); }
+        function closeModal(modal) { modal.classList.add('hidden'); }
+
+        featureAi.addEventListener('click', () => openModal(modalAi));
+        featureExpert.addEventListener('click', () => openModal(modalExpert));
+        featurePortfolio.addEventListener('click', () => openModal(modalPortfolio));
+        
+        document.querySelectorAll('.modal-close-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                closeModal(e.target.closest('.modal-backdrop'));
+            });
+        });
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+            backdrop.addEventListener('click', (e) => {
+                if (e.target === backdrop) {
+                    closeModal(backdrop);
+                }
+            });
+        });
     </script>
 </body>
 </html>
