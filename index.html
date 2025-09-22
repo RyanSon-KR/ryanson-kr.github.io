@@ -7,7 +7,6 @@
     <link rel="icon" href="ArtB_logo.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.8/dist/web/static/pretendard.css">
-    <link rel="stylesheet" href="style.css">
     
     <script>
         let cvLoaded = false;
@@ -41,6 +40,188 @@
     </script>
     <!-- OpenCV.js: 실시간 이미지 처리를 위한 라이브러리 -->
     <script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()"></script>
+    
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #0f172a;}
+        .hero-gradient { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); }
+        .info-box { background-color: #ffffff; border-left: 4px solid #4f46e5; padding: 1.5rem; margin-bottom: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        .feature-icon {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+        .demo-container {
+            position: relative;
+            overflow: hidden;
+            background-color: #1e293b;
+        }
+        #canvasOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        /* 팝업 및 모달 스타일 */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: white;
+            padding: 1.5rem; /* 모바일 패딩 조정 */
+            border-radius: 0.75rem;
+            max-width: 90%;
+            width: 600px;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+        @media (min-width: 640px) {
+            .modal-content {
+                padding: 2rem; /* 데스크탑 패딩 */
+            }
+        }
+         .progress-step {
+            display: flex;
+            align-items: center;
+            opacity: 0.5;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .progress-step.active {
+            opacity: 1;
+        }
+        .progress-step .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 1rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .progress-step.pending .icon { background-color: #e5e7eb; color: #6b7280; }
+        .progress-step.active .icon { background-color: #4f46e5; color: white; }
+        .progress-step.completed .icon { background-color: #10b981; color: white; }
+        
+        /* 피드백 서식 스타일 */
+        .evaluation-item {
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1rem;
+        }
+        .evaluation-header {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .evaluation-details {
+            padding: 0 1rem 1rem 1rem;
+            line-height: 1.75;
+            color: #475569;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding-top 0.5s ease-in-out;
+        }
+        .evaluation-details.open {
+            max-height: 500px; /* 충분한 높이 */
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .evaluation-item-title {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .evaluation-score {
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .toggle-arrow {
+            transition: transform 0.3s;
+        }
+        .toggle-arrow.open {
+            transform: rotate(180deg);
+        }
+        .keyword-tag {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+        }
+
+        /* 스크롤 애니메이션 효과 */
+        .scroll-fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .scroll-fade-in.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* 드래그 앤 드롭 영역 스타일 */
+        #drop-zone {
+            border: 2px dashed #94a3b8;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        #drop-zone.dragover {
+            background-color: #e0e7ff;
+            border-color: #4f46e5;
+        }
+        
+        /* 포트폴리오 갤러리 스타일 */
+        .portfolio-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            aspect-ratio: 1 / 1;
+        }
+        .portfolio-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .portfolio-item:hover img {
+            transform: scale(1.05);
+        }
+        .portfolio-item .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            padding: 1.5rem 1rem 1rem;
+            font-weight: bold;
+            text-align: left;
+        }
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+            display: inline-block;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
 
