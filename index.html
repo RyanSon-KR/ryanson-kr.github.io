@@ -185,6 +185,19 @@
                 <div class="bg-white p-6 rounded-lg shadow-lg">
                     <div id="ui-section" class="space-y-4">
                         <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">카메라로 작품 촬영하기</button>
+                        <!-- 모바일 카메라 호출 지원을 위해 capture 속성 포함 -->
+              <button id="uploadImageButton" class="w-full bg-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-800 transition text-lg">이미지 업로드하기</button>
+            </div>
+
+            <!-- 드롭존: 데스크톱 우선, 모바일은 버튼 사용 권장 -->
+            <div id="dropzone" class="dropzone rounded-lg p-6 text-center text-slate-600">
+              <p class="font-semibold">여기에 이미지를 드래그 앤 드롭하거나, 위의 "이미지 업로드하기" 버튼을 클릭하세요</p>
+              <p class="text-sm mt-1">지원 형식: JPG, PNG, WEBP (HEIC/HEIF는 브라우저 지원 필요)</p>
+            </div>
+
+            <!-- 숨김 파일 입력 (모바일 & 데스크톱 공용) -->
+            <input id="imageFileInput" class="hidden" type="file" accept="image/*" capture="environment" />
+
                         
                         <div id="camera-view" class="hidden relative demo-container rounded-lg">
                             <video id="videoElement" class="w-full h-full" autoplay playsinline></video>
