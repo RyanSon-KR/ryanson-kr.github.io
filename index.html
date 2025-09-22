@@ -129,6 +129,36 @@
             background-color: #e0e7ff;
             border-color: #4f46e5;
         }
+        
+        /* 포트폴리오 갤러리 스타일 */
+        .portfolio-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            aspect-ratio: 1 / 1;
+        }
+        .portfolio-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .portfolio-item:hover img {
+            transform: scale(1.05);
+        }
+        .portfolio-item .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            color: white;
+            padding: 1rem;
+            font-weight: bold;
+            text-align: left;
+        }
+
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -291,8 +321,22 @@
             </div>
         </section>
 
+        <!-- Digital Portfolio Demo Section -->
+        <section id="portfolio-demo" class="py-20 bg-white scroll-fade-in">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold">나의 성장 과정을 한눈에, 디지털 포트폴리오</h2>
+                    <p class="text-gray-600 mt-2">제출했던 모든 그림과 피드백을 모아보고 성장을 확인하세요. (아래 예시를 클릭해보세요)</p>
+                </div>
+                <div id="portfolio-gallery" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- Portfolio items will be dynamically inserted here by JS -->
+                </div>
+            </div>
+        </section>
+
+
         <!-- Survey Section -->
-        <section id="survey" class="py-20 bg-white scroll-fade-in">
+        <section id="survey" class="py-20 bg-gray-100 scroll-fade-in">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold">더 나은 Artb를 위해, 당신의 목소리를 들려주세요</h2>
@@ -500,6 +544,33 @@
             </p>
         </div>
     </div>
+    
+    <!-- Portfolio Detail Modal -->
+    <div id="portfolio-modal" class="modal-backdrop hidden">
+        <div class="modal-content relative max-w-4xl w-full">
+            <button id="close-portfolio-modal" class="absolute top-4 right-4 text-3xl font-bold text-gray-500 hover:text-gray-800">&times;</button>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-2xl font-bold mb-4">분석 작품</h3>
+                    <img id="portfolio-modal-image" class="w-full h-auto rounded-lg border" />
+                </div>
+                <div>
+                     <h3 class="text-2xl font-bold mb-4">AI 피드백 기록</h3>
+                     <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <div id="portfolio-modal-ai-feedback" class="info-box">
+                            <p class="font-bold text-sky-800">🤖 AI 피드백</p>
+                            <div id="portfolio-modal-ai-text"></div>
+                            <div id="portfolio-modal-ai-keywords" class="mt-4 flex flex-wrap gap-2"></div>
+                        </div>
+                         <div class="info-box bg-emerald-50 border-emerald-400">
+                            <p class="font-bold text-emerald-800">👩‍🏫 전문가 피드백</p>
+                            <p>AI 분석을 바탕으로, **표현력**에 대한 깊이 있는 멘토링이 추가되었습니다.</p>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <script>
@@ -548,7 +619,6 @@
         function onCvLoaded(cvInstance) {
             window.cv = cvInstance;
             console.log("OpenCV.js is ready.");
-            cvLoaded = true;
         }
 
         // --- 모달 관련 DOM 요소 ---
@@ -1153,6 +1223,48 @@
                     closeModal(backdrop);
                 }
             });
+        });
+        
+        // --- Portfolio Gallery Logic ---
+        const portfolioGallery = document.getElementById('portfolio-gallery');
+        const portfolioModal = document.getElementById('portfolio-modal');
+        const closePortfolioModalBtn = document.getElementById('close-portfolio-modal');
+        const portfolioModalImage = document.getElementById('portfolio-modal-image');
+        const portfolioModalAiText = document.getElementById('portfolio-modal-ai-text');
+        const portfolioModalAiKeywords = document.getElementById('portfolio-modal-ai-keywords');
+
+        const portfolioData = [
+            { id: 1, image: 'https://placehold.co/600x600/a3e635/4d7c0f?text=Artwork+1', feedback: '### 총평:\n과감한 색상 사용이 돋보이는 인상적인 작품입니다.\n\n### 잘한 점:\n따뜻한 색과 차가운 색의 대비를 통해 주제를 효과적으로 강조했습니다.\n\n### 보완할 점:\n전체적인 구도가 약간 중앙에 치우쳐 있어, 주제를 살짝 옆으로 옮기면 더 역동적인 느낌을 줄 수 있습니다.\n\n### Keywords: #색상 대비, #과감한 표현, #구도 개선' },
+            { id: 2, image: 'https://placehold.co/600x600/fbbf24/b45309?text=Artwork+2', feedback: '### 총평:\n안정적인 구도와 섬세한 묘사가 돋보이는 정물화입니다.\n\n### 잘한 점:\n사물의 질감 표현이 매우 사실적이며, 빛의 방향을 일관되게 잘 표현했습니다.\n\n### 보완할 점:\n배경 처리가 다소 단조로워 보입니다. 배경에 약간의 변화를 주면 그림의 깊이감이 더 살아날 것입니다.\n\n### Keywords: #사실주의, #질감 표현, #안정적인 구도' },
+            { id: 3, image: 'https://placehold.co/600x600/60a5fa/1e40af?text=Artwork+3', feedback: '### 총평:\n역동적인 선의 사용이 인상적인 스케치입니다.\n\n### 잘한 점:\n움직임의 순간을 잘 포착했으며, 강한 필압으로 생동감을 더했습니다.\n\n### 보완할 점:\n인체의 비율이 약간 어색한 부분이 있습니다. 특히 상체와 하체의 길이를 다시 한번 확인해보는 것이 좋습니다.\n\n### Keywords: #드로잉, #역동성, #인체 비율' },
+            { id: 4, image: 'https://placehold.co/600x600/f87171/991b1b?text=Artwork+4', feedback: '### 총평:\n몽환적인 분위기를 자아내는 매력적인 추상화입니다.\n\n### 잘한 점:\n색상의 번짐 효과를 이용해 독특하고 신비로운 느낌을 잘 살렸습니다.\n\n### 보완할 점:\n그림의 주제나 초점이 명확하지 않아 시선이 분산될 수 있습니다. 하나의 강력한 포인트 색상을 추가해보는 것을 추천합니다.\n\n### Keywords: #추상화, #색채, #몽환적' },
+        ];
+
+        portfolioData.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'portfolio-item';
+            div.dataset.portfolioId = item.id;
+            div.innerHTML = `
+                <img src="${item.image}" alt="Portfolio artwork ${item.id}">
+                <div class="overlay">작품 ${item.id}</div>
+            `;
+            portfolioGallery.appendChild(div);
+
+            div.addEventListener('click', () => {
+                const data = portfolioData.find(p => p.id === item.id);
+                if (data) {
+                    portfolioModalImage.src = data.image;
+                    formatFeedbackToHtml(data.feedback, portfolioModalAiText, portfolioModalAiKeywords);
+                    openModal(portfolioModal);
+                }
+            });
+        });
+
+        closePortfolioModalBtn.addEventListener('click', () => closeModal(portfolioModal));
+        portfolioModal.addEventListener('click', (e) => {
+            if (e.target === portfolioModal) {
+                closeModal(portfolioModal);
+            }
         });
     </script>
 </body>
