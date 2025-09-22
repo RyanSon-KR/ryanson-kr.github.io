@@ -78,6 +78,9 @@
             border-radius: 0.5rem;
             padding: 1rem;
         }
+        .feedback-item:last-child {
+            margin-bottom: 0;
+        }
         .feedback-item h4 {
             display: flex;
             align-items: center;
@@ -115,6 +118,16 @@
         .scroll-fade-in.is-visible {
             opacity: 1;
             transform: translateY(0);
+        }
+        
+        /* 드래그 앤 드롭 영역 스타일 */
+        #drop-zone {
+            border: 2px dashed #cbd5e1;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        #drop-zone.dragover {
+            background-color: #e0e7ff;
+            border-color: #4f46e5;
         }
     </style>
 </head>
@@ -220,10 +233,22 @@
 
                 <div class="bg-white p-6 rounded-lg shadow-lg">
                     <div id="ui-section" class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">📷 카메라로 촬영</button>
-                            <button id="uploadImageButton" class="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition text-lg">📂 파일 업로드</button>
+                        <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg">
+                            <h4 class="font-bold mb-2">업로드 및 촬영 가이드라인</h4>
+                            <ul class="list-disc list-inside text-sm space-y-1">
+                                <li>그림 전체가 화면에 꽉 차게 촬영해주세요.</li>
+                                <li>밝고 그림자가 없는 환경에서 촬영하는 것이 좋습니다.</li>
+                                <li>정면에서 촬영하여 왜곡을 최소화해주세요.</li>
+                            </ul>
                         </div>
+                        
+                        <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">📷 카메라로 촬영</button>
+                        
+                        <div id="drop-zone" class="p-4 text-center rounded-lg cursor-pointer">
+                            <button id="uploadImageButton" class="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition text-lg">📂 파일 업로드</button>
+                             <p class="mt-3 text-gray-500 text-sm">또는 여기에 파일을 드래그 앤 드롭하세요</p>
+                        </div>
+
                         <input type="file" id="imageUploadInput" class="hidden" accept="image/png, image/jpeg">
                         
                         <div id="camera-view" class="hidden relative demo-container rounded-lg">
@@ -493,6 +518,7 @@
         const startCameraButton = document.getElementById('startCameraButton');
         const uploadImageButton = document.getElementById('uploadImageButton');
         const imageUploadInput = document.getElementById('imageUploadInput');
+        const dropZone = document.getElementById('drop-zone');
         const cameraView = document.getElementById('camera-view');
         const videoElement = document.getElementById('videoElement');
         const canvasOverlay = document.getElementById('canvasOverlay');
@@ -551,13 +577,31 @@
             link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
         });
 
-        // --- 파일 업로드 기능 ---
-        uploadImageButton.addEventListener('click', () => {
-            imageUploadInput.click();
-        });
+        // --- 파일 업로드 및 드래그 앤 드롭 기능 ---
+        uploadImageButton.addEventListener('click', () => imageUploadInput.click());
 
         imageUploadInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -576,7 +620,8 @@
                 };
                 reader.readAsDataURL(file);
             }
-        });
+        }
+
 
         function detectCornersFromCanvas(canvas) {
             if (!cvLoaded) return null;
@@ -915,6 +960,7 @@
 
             const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
             let html = '';
+            let keywordsContainer = container.nextElementSibling;
             let keywords = [];
             
             const keywordMarker = "Keywords:";
@@ -927,7 +973,7 @@
                 if (keywordIndex !== -1) {
                     const keywordLine = content.substring(keywordIndex);
                     content = content.substring(0, keywordIndex).trim();
-                    keywords = keywordLine.replace(keywordMarker, '').split(',').map(k => k.trim()).filter(k => k);
+                    keywords = keywordLine.replace(keywordMarker, '').split(',').map(k => k.trim().replace(/^#/, '')).filter(k => k);
                 }
                 
                 content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
@@ -935,7 +981,10 @@
                 html += `<div class="feedback-item"><h4>${getIconForTitle(title)}${title}</h4><p>${content}</p></div>`;
             }
             container.innerHTML = html;
-            return keywords;
+
+            if (keywordsContainer && keywords.length > 0) {
+                keywordsContainer.innerHTML = keywords.map(k => `<span class="keyword-tag">#${k}</span>`).join('');
+            }
         }
         
         function getIconForTitle(title) {
@@ -955,7 +1004,7 @@
             
             const feedbackTextContainer = document.getElementById('ai-feedback-text');
             const keywordsContainer = document.getElementById('ai-feedback-keywords');
-            const keywords = formatFeedbackToHtml(data.ai_feedback.feedback_text, feedbackTextContainer, keywordsContainer);
+            formatFeedbackToHtml(data.ai_feedback.feedback_text, feedbackTextContainer, keywordsContainer);
             
             document.getElementById('style-analysis-container').classList.remove('hidden');
             document.getElementById('style-result').classList.add('hidden');
