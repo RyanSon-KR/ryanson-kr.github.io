@@ -346,7 +346,6 @@
                             <div id="ai-feedback" class="info-box !bg-white">
                                 <p class="font-bold text-sky-800 mb-4">🤖 AI 1차 피드백</p>
                                 <div id="ai-feedback-text"></div>
-                                <div id="ai-feedback-keywords" class="mt-4 flex flex-wrap gap-2"></div>
                             </div>
                              <div id="expert-feedback-info" class="info-box bg-emerald-50 border-emerald-400">
                                 <p class="font-bold text-emerald-800">👩‍🏫 전문가 최종 피드백</p>
@@ -361,7 +360,6 @@
                                 <div id="style-result" class="hidden mt-4 info-box bg-purple-50 border-purple-400">
                                     <p class="font-bold text-purple-800">🎨 AI 스타일 분석</p>
                                     <div id="style-result-text"></div>
-                                    <div id="style-result-keywords" class="mt-4 flex flex-wrap gap-2"></div>
                                 </div>
                             </div>
                         </div>
@@ -1078,46 +1076,56 @@
             }
         }
         
-        function formatFeedbackToHtml(text, containerId) {
+       function formatFeedbackToHtml(text, containerId) {
             const container = document.getElementById(containerId);
             if (!container) return;
-            
-            // New parser for the professional evaluation format
-            const evaluationRegex = /\[(.*?)\]\s*-\s*(.*)|(👉\s*\*\*종합 평가:\s*(.*?)\*\*)|(\*\*총평:\*\*\s*(.*))/;
+
+            container.innerHTML = ''; // Clear previous content
+
             const lines = text.split('\n').filter(line => line.trim() !== '');
-            let html = '';
+            let currentHtml = '';
             
+            // Regex to parse the new professional format
+            const itemRegex = /\[(.*?)\]\s*-\s*(.*)/;
+            const totalScoreRegex = /👉\s*\*\*종합 평가:\s*(.*?)\*\*/;
+            const summaryRegex = /\*\*총평:\*\*\s*(.*)/;
+
             lines.forEach(line => {
-                const match = line.match(evaluationRegex);
-                if (match) {
-                    const [, title, content, , totalScore, , summary] = match;
-                    if (title) {
-                        const scoreRegex = /(.*?):\s*(\d+\.?\d*)\/10/;
-                        const titleScoreMatch = title.match(scoreRegex);
-                        if (titleScoreMatch) {
-                             html += `<div class="evaluation-item">
-                                <span class="evaluation-item-title">${titleScoreMatch[1].trim()}</span>
+                const itemMatch = line.match(itemRegex);
+                const totalScoreMatch = line.match(totalScoreRegex);
+                const summaryMatch = line.match(summaryRegex);
+
+                if (itemMatch) {
+                    const fullTitle = itemMatch[1].trim();
+                    const content = itemMatch[2].trim();
+                    const scoreRegex = /(.*?):\s*(\d+\.?\d*)\/10/;
+                    const titleScoreMatch = fullTitle.match(scoreRegex);
+
+                    if (titleScoreMatch) {
+                        const title = titleScoreMatch[1].trim();
+                        const score = titleScoreMatch[2];
+                        currentHtml += `
+                            <div class="evaluation-item">
+                                <span class="evaluation-item-title">${title}</span>
                                 <div class="evaluation-item-content">
-                                    <span class="evaluation-score">${titleScoreMatch[2]}/10</span> - ${content.trim()}
+                                    <span class="evaluation-score">${score}/10</span> - ${content}
                                 </div>
                             </div>`;
-                        } else {
-                            html += `<div class="evaluation-item">
-                                <span class="evaluation-item-title">${title.trim()}</span>
-                                <div class="evaluation-item-content">${content.trim()}</div>
-                            </div>`;
-                        }
-                    } else if (totalScore) {
-                        html += `<div class="mt-6 pt-4 border-t border-slate-200 text-center">
-                                    <h4 class="text-lg font-semibold text-slate-700">종합 평가</h4>
-                                    <p class="text-3xl font-bold text-indigo-600 mt-2">${totalScore}</p>
-                                 </div>`;
-                    } else if (summary) {
-                         html += `<div class="mt-4 text-center"><p class="text-slate-600">${summary}</p></div>`;
                     }
+                } else if (totalScoreMatch) {
+                    const score = totalScoreMatch[1].trim();
+                    currentHtml += `
+                        <div class="mt-6 pt-4 border-t border-slate-200 text-center">
+                            <h4 class="text-lg font-semibold text-slate-700">종합 평가</h4>
+                            <p class="text-3xl font-bold text-indigo-600 mt-2">${score}</p>
+                        </div>`;
+                } else if (summaryMatch) {
+                    const summary = summaryMatch[1].trim();
+                    currentHtml += `<div class="mt-4 text-center"><p class="text-slate-600">${summary}</p></div>`;
                 }
             });
-            container.innerHTML = html;
+            
+            container.innerHTML = currentHtml;
         }
         
         function displayResults(data) {
@@ -1306,7 +1314,7 @@
                 const data = portfolioData.find(p => p.id === item.id);
                 if (data) {
                     portfolioModalImage.src = data.image;
-                    formatFeedbackToHtml(data.feedback, portfolioModalAiText, portfolioModalAiKeywords);
+                    formatFeedbackToHtml(data.feedback, portfolioModalAiText);
                     openModal(portfolioModal);
                 }
             });
