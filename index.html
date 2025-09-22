@@ -7,37 +7,168 @@
     <link rel="icon" href="ArtB_logo.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.8/dist/web/static/pretendard.css">
-    <link rel="stylesheet" href="/style.css">
-    
-    <script>
-        let cvLoaded = false;
-        
-        // OpenCV.js가 로드된 후 호출될 함수를 미리 정의합니다.
-        function onOpenCvReady() {
-            if (window.cv instanceof Promise) {
-                cv.then(onCvLoaded);
-            } else if (window.cv && window.cv.onRuntimeInitialized) {
-                cv.onRuntimeInitialized = () => {
-                    onCvLoaded(window.cv);
-                };
-            } else {
-                 // Fallback for older environments
-                 setTimeout(onOpenCvReady, 50);
-            }
-        }
-
-        // OpenCV가 성공적으로 로드되면 이 함수가 호출됩니다.
-        function onCvLoaded(cvInstance) {
-            window.cv = cvInstance;
-            console.log("OpenCV.js is ready.");
-            cvLoaded = true;
-            
-            // script.js가 로드된 후 실행될 이벤트를 발생시킵니다.
-            document.dispatchEvent(new Event('opencv-ready'));
-        }
-    </script>
     <!-- OpenCV.js: 실시간 이미지 처리를 위한 라이브러리 -->
     <script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()"></script>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #0f172a;}
+        .hero-gradient { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); }
+        .info-box { background-color: #ffffff; border-left: 4px solid #4f46e5; padding: 1.5rem; margin-bottom: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        .feature-icon {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+        .demo-container {
+            position: relative;
+            overflow: hidden;
+            background-color: #1e293b;
+        }
+        #canvasOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        /* 팝업 및 모달 스타일 */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 90%;
+            width: 600px;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+        }
+         .progress-step {
+            display: flex;
+            align-items: center;
+            opacity: 0.5;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .progress-step.active {
+            opacity: 1;
+        }
+        .progress-step .icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 1rem;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .progress-step.pending .icon { background-color: #e5e7eb; color: #6b7280; }
+        .progress-step.active .icon { background-color: #4f46e5; color: white; }
+        .progress-step.completed .icon { background-color: #10b981; color: white; }
+        
+        /* 피드백 서식 스타일 */
+        .evaluation-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+        .evaluation-item-title {
+            font-weight: 600;
+            color: #1e293b;
+            width: 130px;
+            flex-shrink: 0;
+        }
+        .evaluation-item-content {
+            flex-grow: 1;
+            color: #475569;
+            line-height: 1.75;
+        }
+        .evaluation-score {
+            font-weight: bold;
+            color: #4f46e5;
+        }
+        .keyword-tag {
+            background-color: #e0e7ff;
+            color: #4338ca;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+        }
+
+        /* 스크롤 애니메이션 효과 */
+        .scroll-fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .scroll-fade-in.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* 드래그 앤 드롭 영역 스타일 */
+        #drop-zone {
+            border: 2px dashed #94a3b8;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        #drop-zone.dragover {
+            background-color: #e0e7ff;
+            border-color: #4f46e5;
+        }
+        
+        /* 포트폴리오 갤러리 스타일 */
+        .portfolio-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            aspect-ratio: 1 / 1;
+        }
+        .portfolio-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        .portfolio-item:hover img {
+            transform: scale(1.05);
+        }
+        .portfolio-item .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            padding: 1.5rem 1rem 1rem;
+            font-weight: bold;
+            text-align: left;
+        }
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+            display: inline-block;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
 
@@ -48,6 +179,7 @@
                 <div class="flex-shrink-0">
                     <a href="#" class="text-2xl font-bold text-indigo-600">Artb</a>
                 </div>
+                <!-- Desktop Navigation -->
                 <nav class="hidden md:flex md:items-center md:space-x-8">
                     <a href="#features" class="text-slate-600 hover:text-indigo-600 transition">주요 기능</a>
                     <a href="#demo" class="text-slate-600 hover:text-indigo-600 transition">데모 체험</a>
@@ -55,13 +187,17 @@
                     <a href="#contact" class="text-slate-600 hover:text-indigo-600 transition">문의하기</a>
                     <a href="#cta" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">사전 등록</a>
                 </nav>
+                <!-- Mobile Menu Button -->
                 <div class="md:hidden">
                     <button id="mobile-menu-button" class="p-2 rounded-md text-slate-600 hover:text-indigo-600 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" /></svg>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
                     </button>
                 </div>
             </div>
         </div>
+        <!-- Mobile Menu -->
         <div id="mobile-menu" class="hidden md:hidden">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 <a href="#features" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 mobile-menu-link">주요 기능</a>
@@ -91,7 +227,7 @@
 
         <!-- Features Section -->
         <section id="features" class="py-24 bg-white scroll-fade-in">
-             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-4xl font-bold tracking-tighter">무엇이 Artb를 특별하게 만드나요?</h2>
                     <p class="text-slate-600 mt-4 max-w-2xl mx-auto">Artb는 기술의 정밀함과 사람의 온기를 결합하여 최상의 학습 경험을 제공합니다.</p>
@@ -146,11 +282,11 @@
                         <h3 class="text-xl font-semibold mb-4 text-center text-indigo-600">Artb의 결합 피드백</h3>
                         <div class="space-y-4">
                             <div class="feedback-item !p-0 !border-0 !bg-transparent">
-                                <h4 class="!text-indigo-700">🤖 AI 기술 분석</h4>
+                                <h4>🤖 AI 기술 분석</h4>
                                 <p>AI가 그림의 구도, 명암, 형태, 색채 등을 정밀하게 분석하여 객관적인 데이터를 제공합니다.</p>
                             </div>
                              <div class="feedback-item !p-0 !border-0 !bg-transparent">
-                                <h4 class="!text-emerald-700">👩‍🏫 전문가 통찰력</h4>
+                                <h4>👩‍🏫 전문가 통찰력</h4>
                                 <p>"AI가 지적한 명암 부분을 보완하면, 이 작품의 감성적인 깊이가 훨씬 더 살아날 거예요. 특히 빛이 시작되는 부분을 밝게 강조해보세요."</p>
                             </div>
                         </div>
@@ -179,12 +315,9 @@
                             </ul>
                         </div>
                         
-                        <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg flex items-center justify-center gap-2" disabled>
-                             <svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                            카메라 기능 로딩 중...
+                        <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            카메라로 촬영
                         </button>
                         
                         <div id="drop-zone" class="p-6 text-center rounded-lg cursor-pointer">
@@ -318,7 +451,7 @@
             </div>
         </section>
         
-        <section id="contact" class="py-24 bg-white">
+        <section id="contact" class="py-24 bg-white scroll-fade-in">
              <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl md:text-4xl font-bold tracking-tighter">궁금한 점이 있으신가요?</h2>
@@ -350,7 +483,7 @@
             </div>
         </section>
         
-        <section id="cta" class="py-24 bg-slate-100">
+        <section id="cta" class="py-24 bg-slate-100 scroll-fade-in">
              <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                  <div id="cta-container">
                     <h2 class="text-3xl md:text-4xl font-bold tracking-tighter">새로운 미술 교육의 시작,<br>첫 번째 주인공이 되어주세요.</h2>
@@ -376,7 +509,7 @@
         </div>
     </footer>
 
-    <!-- All Modals -->
+    <!-- Correction Choice Modal -->
     <div id="correction-choice-modal" class="modal-backdrop hidden">
         <div class="modal-content text-center">
             <h3 class="text-2xl font-bold mb-4">어떤 이미지로 분석할까요?</h3>
@@ -397,6 +530,8 @@
             </div>
         </div>
     </div>
+    
+    <!-- AI Feedback Progress Modal -->
     <div id="feedback-progress-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <h3 class="text-2xl font-bold mb-2 text-center">AI가 그림을 분석하고 있습니다</h3>
@@ -404,6 +539,7 @@
                 <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%; transition: width 0.5s ease-in-out;"></div>
             </div>
             <p id="progress-text" class="text-center text-slate-600 mb-6">진행도: 0%</p>
+
             <div class="space-y-4">
                  <div id="step1" class="progress-step pending">
                     <div class="icon">🖼️</div><p>AI 분석 요청</p>
@@ -420,6 +556,8 @@
             </div>
         </div>
     </div>
+
+    <!-- Feature Detail Modals -->
     <div id="modal-ai" class="modal-backdrop hidden">
         <div class="modal-content">
             <div class="flex justify-between items-center mb-4">
@@ -458,32 +596,737 @@
             </p>
         </div>
     </div>
-    <div id="portfolio-comparison-modal" class="modal-backdrop hidden">
-        <div class="modal-content relative max-w-5xl w-full">
-            <button id="close-comparison-modal" class="absolute top-4 right-4 text-3xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
-            <h3 class="text-2xl font-bold mb-6 text-center">성장 기록: 작품 2</h3>
-            <div class="grid md:grid-cols-2 gap-6 items-start">
+    
+    <!-- Portfolio Detail Modal -->
+    <div id="portfolio-modal" class="modal-backdrop hidden">
+        <div class="modal-content relative max-w-4xl w-full">
+            <button id="close-portfolio-modal" class="absolute top-4 right-4 text-3xl font-bold text-slate-500 hover:text-slate-800">&times;</button>
+            <div class="grid md:grid-cols-2 gap-6">
                 <div>
-                    <h4 class="text-xl font-semibold mb-2">수정 전 원본</h4>
-                    <img id="comparison-original-image" class="w-full h-auto rounded-lg border" />
-                    <div class="mt-4 info-box !bg-white">
-                        <p class="font-bold text-sky-800">🤖 최초 AI 피드백</p>
-                        <div id="comparison-initial-feedback"></div>
-                    </div>
+                    <h3 class="text-2xl font-bold mb-4">분석 작품</h3>
+                    <img id="portfolio-modal-image" class="w-full h-auto rounded-lg border" />
                 </div>
                 <div>
-                     <h4 class="text-xl font-semibold mb-2">피드백 반영 후</h4>
-                     <img id="comparison-revised-image" class="w-full h-auto rounded-lg border" />
-                     <div class="mt-4 info-box bg-emerald-50 border-emerald-400">
-                        <p class="font-bold text-emerald-800">📈 AI 성장 분석</p>
-                        <div id="comparison-improvement-feedback"></div>
-                    </div>
+                     <h3 class="text-2xl font-bold mb-4">AI 피드백 기록</h3>
+                     <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <div id="portfolio-modal-ai-feedback" class="info-box !bg-white">
+                            <p class="font-bold text-sky-800">🤖 AI 피드백</p>
+                            <div id="portfolio-modal-ai-text"></div>
+                            <div id="portfolio-modal-ai-keywords" class="mt-4 flex flex-wrap gap-2"></div>
+                        </div>
+                         <div class="info-box bg-emerald-50 border-emerald-400">
+                            <p class="font-bold text-emerald-800">👩‍🏫 전문가 피드백</p>
+                            <p>AI 분석을 바탕으로, **표현력**에 대한 깊이 있는 멘토링이 추가되었습니다.</p>
+                        </div>
+                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js" defer></script>
+
+    <script>
+        // --- HTTPS Redirection ---
+        if (location.protocol === 'http:' && location.hostname !== 'localhost') {
+            location.replace('https://' + location.host + location.pathname);
+        }
+
+        // --- 중요 ---
+        // 백엔드 서버를 Vercel에 배포한 후, 발급받은 실제 서버 주소로 이 값을 변경해야 합니다.
+        const backendUrl = 'https://artb-backend.vercel.app';
+        
+        // --- 전역 변수 및 DOM 요소 ---
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const startCameraButton = document.getElementById('startCameraButton');
+        const uploadImageButton = document.getElementById('uploadImageButton');
+        const imageUploadInput = document.getElementById('imageUploadInput');
+        const dropZone = document.getElementById('drop-zone');
+        const cameraView = document.getElementById('camera-view');
+        const videoElement = document.getElementById('videoElement');
+        const canvasOverlay = document.getElementById('canvasOverlay');
+        const captureButton = document.getElementById('captureButton');
+        const closeCameraButton = document.getElementById('closeCameraButton');
+        const resultSection = document.getElementById('result-section');
+        const cameraError = document.getElementById('camera-error');
+        let stream = null;
+        let lastImageBlob = null;
+        let originalImageBlob = null;
+        let correctedImageBlob = null;
+        let cvLoaded = false;
+        let processVideoTimeout;
+
+        function onOpenCvReady() {
+            if (window.cv) {
+                 if (cv instanceof Promise) {
+                    cv.then(onCvLoaded);
+                } else {
+                    cv.onRuntimeInitialized = () => {
+                        onCvLoaded(cv);
+                    };
+                }
+            }
+        }
+
+        function onCvLoaded(cvInstance) {
+            window.cv = cvInstance;
+            console.log("OpenCV.js is ready.");
+        }
+
+        // --- 모달 관련 DOM 요소 ---
+        const correctionChoiceModal = document.getElementById('correction-choice-modal');
+        const choiceOriginalImageEl = document.getElementById('choice-original-image');
+        const choiceCorrectedImageEl = document.getElementById('choice-corrected-image');
+        const analyzeOriginalBtn = document.getElementById('analyze-original-btn');
+        const analyzeCorrectedBtn = document.getElementById('analyze-corrected-btn');
+        
+        const feedbackProgressModal = document.getElementById('feedback-progress-modal');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        const progressSteps = {
+            step1: document.getElementById('step1'),
+            step2: document.getElementById('step2'),
+            step3: document.getElementById('step3'),
+            step4: document.getElementById('step4'),
+        };
+
+        // --- 모바일 메뉴 ---
+        mobileMenuButton.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        document.querySelectorAll('.mobile-menu-link').forEach(link => {
+            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+        });
+
+        // --- 파일 업로드 및 드래그 앤 드롭 기능 ---
+        uploadImageButton.addEventListener('click', () => imageUploadInput.click());
+
+        imageUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        
+                        const corners = detectCornersFromCanvas(canvas);
+                        showCorrectionChoice(canvas, corners);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+
+        function detectCornersFromCanvas(canvas) {
+            if (!cvLoaded) return null;
+            let src = cv.imread(canvas);
+            let gray = new cv.Mat();
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+            let edges = new cv.Mat();
+            cv.Canny(edges, gray, 50, 150);
+
+            let contours = new cv.MatVector();
+            let hierarchy = new cv.Mat();
+            cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+
+            let maxArea = 0;
+            let bestContour = null;
+            const minArea = (canvas.width * canvas.height) / 10;
+
+            for (let i = 0; i < contours.size(); ++i) {
+                let cnt = contours.get(i);
+                let area = cv.contourArea(cnt);
+                if (area > minArea) {
+                    let peri = cv.arcLength(cnt, true);
+                    let approx = new cv.Mat();
+                    cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
+                    if (approx.rows === 4) {
+                        if (area > maxArea) {
+                            maxArea = area;
+                            bestContour = approx.clone();
+                        }
+                    }
+                    approx.delete();
+                }
+                cnt.delete();
+            }
+
+            let points = null;
+            if (bestContour) {
+                points = [];
+                for(let i=0; i<4; i++){
+                    points.push({ x: bestContour.data32S[i * 2], y: bestContour.data32S[i * 2 + 1] });
+                }
+                bestContour.delete();
+            }
+            
+            src.delete(); gray.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+            return points;
+        }
+
+
+        // --- 카메라 및 OpenCV 로직 ---
+        startCameraButton.addEventListener('click', async () => {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            clearTimeout(processVideoTimeout);
+            cameraError.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            
+            if (!cvLoaded) {
+                cameraError.textContent = "카메라 기능을 로드 중입니다. 잠시 후 다시 시도해주세요.";
+                cameraError.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                if (location.protocol !== 'https:' || !navigator.mediaDevices) {
+                    throw new Error('카메라는 보안 연결(HTTPS)된 페이지에서만 사용할 수 있습니다.');
+                }
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                });
+                cameraView.classList.remove('hidden');
+                startCameraButton.textContent = '카메라 재시작';
+                videoElement.srcObject = stream;
+                videoElement.onloadedmetadata = () => {
+                    resizeCanvas();
+                    processVideo(); 
+                };
+            } catch (err) {
+                console.error("카메라 접근 오류:", err);
+                cameraError.textContent = err.message || "카메라에 접근할 수 없습니다. 브라우저의 카메라 권한을 확인해주세요.";
+                cameraError.classList.remove('hidden');
+                cameraView.classList.add('hidden');
+            }
+        });
+
+        function resizeCanvas() {
+            if (!videoElement.videoWidth) return;
+            const videoRect = videoElement.getBoundingClientRect();
+            canvasOverlay.width = videoRect.width;
+            canvasOverlay.height = videoRect.height;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        lastDetectedCorners = null;
+
+        function processVideo() {
+            if (!stream?.active || !cvLoaded) return;
+            
+            const videoWidth = videoElement.videoWidth;
+            const videoHeight = videoElement.videoHeight;
+            if (videoWidth === 0 || videoHeight === 0) {
+                 processVideoTimeout = setTimeout(processVideo, 100);
+                 return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
+
+            let src = cv.imread(canvas);
+            let gray = new cv.Mat();
+            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+            cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+            let edges = new cv.Mat();
+            cv.Canny(edges, gray, 50, 150);
+
+            let contours = new cv.MatVector();
+            let hierarchy = new cv.Mat();
+            cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+
+            let maxArea = 0;
+            let bestContour = null;
+            const minArea = (videoWidth * videoHeight) / 10;
+
+            for (let i = 0; i < contours.size(); ++i) {
+                let cnt = contours.get(i);
+                let area = cv.contourArea(cnt);
+                if (area > minArea) {
+                    let peri = cv.arcLength(cnt, true);
+                    let approx = new cv.Mat();
+                    cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
+                    if (approx.rows === 4) {
+                        if (area > maxArea) {
+                            maxArea = area;
+                            bestContour = approx.clone();
+                        }
+                    }
+                    approx.delete();
+                }
+                cnt.delete();
+            }
+
+            const overlayCtx = canvasOverlay.getContext('2d');
+            overlayCtx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
+
+            if (bestContour) {
+                const points = [];
+                for(let i=0; i<4; i++){
+                    points.push({
+                        x: bestContour.data32S[i * 2] * (canvasOverlay.width / videoWidth),
+                        y: bestContour.data32S[i * 2 + 1] * (canvasOverlay.height / videoHeight)
+                    });
+                }
+                lastDetectedCorners = points; 
+
+                overlayCtx.beginPath();
+                overlayCtx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < 4; i++) {
+                    overlayCtx.lineTo(points[i].x, points[i].y);
+                }
+                overlayCtx.closePath();
+                overlayCtx.strokeStyle = 'rgba(74, 222, 128, 0.9)';
+                overlayCtx.lineWidth = 4;
+                overlayCtx.stroke();
+                
+                bestContour.delete();
+            } else {
+                 lastDetectedCorners = null;
+            }
+            
+            src.delete(); gray.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+            
+            processVideoTimeout = setTimeout(processVideo, 50); 
+        }
+
+        captureButton.addEventListener('click', () => {
+            clearTimeout(processVideoTimeout);
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            cameraView.classList.add('hidden');
+            
+            showCorrectionChoice(canvas, lastDetectedCorners);
+        });
+
+        closeCameraButton.addEventListener('click', () => {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            clearTimeout(processVideoTimeout);
+            cameraView.classList.add('hidden');
+            cameraError.classList.add('hidden');
+            startCameraButton.textContent = '카메라로 작품 촬영하기';
+        });
+
+        function showCorrectionChoice(originalCanvas, corners) {
+            originalCanvas.toBlob(blob => {
+                originalImageBlob = blob;
+                if (!corners) {
+                    console.log("자동 보정 실패, 원본 이미지로 분석을 시작합니다.");
+                    startAiAnalysis(originalImageBlob);
+                    return;
+                }
+                
+                choiceOriginalImageEl.src = URL.createObjectURL(blob);
+                
+                let src = cv.imread(originalCanvas);
+                corners.sort((a,b) => a.y - b.y);
+                const topPoints = [corners[0], corners[1]].sort((a, b) => a.x - b.x);
+                const bottomPoints = [corners[2], corners[3]].sort((a, b) => a.x - b.x);
+                const sortedCorners = [...topPoints, ...bottomPoints];
+
+                const dsize = new cv.Size(originalCanvas.width, originalCanvas.height);
+                let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                    sortedCorners[0].x, sortedCorners[0].y,
+                    sortedCorners[1].x, sortedCorners[1].y,
+                    sortedCorners[3].x, sortedCorners[3].y,
+                    sortedCorners[2].x, sortedCorners[2].y
+                ]);
+                let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, dsize.width, 0, dsize.width, dsize.height, 0, dsize.height]);
+                let M = cv.getPerspectiveTransform(srcTri, dstTri);
+                let dst = new cv.Mat();
+                cv.warpPerspective(src, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+                
+                const correctedCanvas = document.createElement('canvas');
+                cv.imshow(correctedCanvas, dst);
+                choiceCorrectedImageEl.src = correctedCanvas.toDataURL('image/jpeg');
+                correctedCanvas.toBlob(blob => { correctedImageBlob = blob; }, 'image/jpeg');
+                
+                src.delete(); dst.delete(); M.delete(); srcTri.delete(); dstTri.delete();
+                
+                correctionChoiceModal.classList.remove('hidden');
+            }, 'image/jpeg');
+        }
+
+        analyzeOriginalBtn.addEventListener('click', () => startAiAnalysis(originalImageBlob));
+        analyzeCorrectedBtn.addEventListener('click', () => startAiAnalysis(correctedImageBlob));
+
+        async function startAiAnalysis(imageBlob) {
+            correctionChoiceModal.classList.add('hidden');
+            feedbackProgressModal.classList.remove('hidden');
+            
+            // 프로그레스 바 및 스텝 초기화
+            updateProgress(0);
+            Object.values(progressSteps).forEach(step => step.className = 'progress-step pending');
+            
+            setTimeout(() => {
+                updateProgressStep('step1', 'active', 'AI 분석 요청');
+                updateProgress(10);
+            }, 100);
+            
+            submitForAnalysis(imageBlob);
+        }
+
+        function updateProgress(percentage) {
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `진행도: ${percentage}%`;
+        }
+        
+        function updateProgressStep(stepId, status, text) {
+            const step = progressSteps[stepId];
+            if (!step) return;
+            step.className = 'progress-step';
+            step.classList.add(status);
+            step.querySelector('p').textContent = text;
+        }
+
+        async function submitForAnalysis(imageBlob) {
+            lastImageBlob = imageBlob;
+            
+            const formData = new FormData();
+            formData.append('image', imageBlob, 'artwork.jpg');
+
+            try {
+                const response = await fetch(`${backendUrl}/analyze`, { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+                    throw new Error(`서버 오류: ${errorData.error || response.statusText}`);
+                }
+                
+                updateProgressStep('step1', 'completed', 'AI 분석 요청 완료');
+                updateProgress(25);
+                setTimeout(() => {
+                     updateProgressStep('step2', 'active', '구도 및 형태 평가');
+                     updateProgress(50);
+                }, 500);
+
+                const result = await response.json();
+                
+                updateProgressStep('step2', 'completed', '구도 및 형태 평가 완료');
+                setTimeout(() => {
+                    updateProgressStep('step3', 'active', '명암 및 채색 평가');
+                    updateProgress(75);
+                }, 500);
+                setTimeout(() => {
+                    updateProgressStep('step3', 'completed', '명암 및 채색 평가 완료');
+                    updateProgressStep('step4', 'active', '최종 피드백 생성');
+                    updateProgress(90);
+                }, 1000);
+                
+                setTimeout(() => {
+                    updateProgressStep('step4', 'completed', '최종 피드백 생성 완료!');
+                    updateProgress(100);
+                    setTimeout(() => {
+                        feedbackProgressModal.classList.add('hidden');
+                        displayResults({
+                            processed_image_url: URL.createObjectURL(imageBlob),
+                            ai_feedback: { feedback_text: result.feedback }
+                        });
+                    }, 500);
+                }, 1500);
+
+            } catch (error) {
+                feedbackProgressModal.classList.add('hidden');
+                console.error("분석 요청 실패:", error);
+                cameraError.textContent = `AI 분석에 실패했습니다: ${error.message}`;
+                cameraError.classList.remove('hidden');
+            }
+        }
+        
+       function formatFeedbackToHtml(text, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = ''; // Clear previous content
+
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            let currentHtml = '';
+            
+            // Regex to parse the new professional format
+            const itemRegex = /\[(.*?)\]\s*-\s*(.*)/;
+            const totalScoreRegex = /👉\s*\*\*종합 평가:\s*(.*?)\*\*/;
+            const summaryRegex = /\*\*총평:\*\*\s*(.*)/;
+
+            lines.forEach(line => {
+                const itemMatch = line.match(itemRegex);
+                const totalScoreMatch = line.match(totalScoreRegex);
+                const summaryMatch = line.match(summaryRegex);
+
+                if (itemMatch) {
+                    const fullTitle = itemMatch[1].trim();
+                    const content = itemMatch[2].trim();
+                    const scoreRegex = /(.*?):\s*(\d+\.?\d*)\/10/;
+                    const titleScoreMatch = fullTitle.match(scoreRegex);
+
+                    if (titleScoreMatch) {
+                        const title = titleScoreMatch[1].trim();
+                        const score = titleScoreMatch[2];
+                        currentHtml += `
+                            <div class="evaluation-item">
+                                <span class="evaluation-item-title">${title}</span>
+                                <div class="evaluation-item-content">
+                                    <span class="evaluation-score">${score}/10</span> - ${content}
+                                </div>
+                            </div>`;
+                    }
+                } else if (totalScoreMatch) {
+                    const score = totalScoreMatch[1].trim();
+                    currentHtml += `
+                        <div class="mt-6 pt-4 border-t border-slate-200 text-center">
+                            <h4 class="text-lg font-semibold text-slate-700">종합 평가</h4>
+                            <p class="text-3xl font-bold text-indigo-600 mt-2">${score}</p>
+                        </div>`;
+                } else if (summaryMatch) {
+                    const summary = summaryMatch[1].trim();
+                    currentHtml += `<div class="mt-4 text-center"><p class="text-slate-600">${summary}</p></div>`;
+                }
+            });
+            
+            container.innerHTML = currentHtml;
+        }
+        
+        function displayResults(data) {
+            resultSection.classList.remove('hidden');
+            document.getElementById('processedImage').src = data.processed_image_url;
+            
+            formatFeedbackToHtml(data.ai_feedback.feedback_text, 'ai-feedback-text');
+            
+            document.getElementById('style-analysis-container').classList.remove('hidden');
+            document.getElementById('style-result').classList.add('hidden');
+        }
+        
+        const styleAnalysisButton = document.getElementById('styleAnalysisButton');
+        const styleLoading = document.getElementById('style-loading');
+        const styleResult = document.getElementById('style-result');
+        const styleResultText = document.getElementById('style-result-text');
+        const styleResultKeywords = document.getElementById('style-result-keywords');
+
+        styleAnalysisButton.addEventListener('click', async () => {
+            if (!lastImageBlob) return;
+            styleLoading.classList.remove('hidden');
+            styleResult.classList.add('hidden');
+            styleAnalysisButton.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', lastImageBlob, 'artwork.jpg');
+
+            try {
+                const response = await fetch(`${backendUrl}/analyze-style`, {
+                    method: 'POST', body: formData,
+                });
+                if (!response.ok) {
+                     const errorData = await response.json().catch(() => ({ error: response.statusText }));
+                    throw new Error(`스타일 분석에 실패했습니다: ${errorData.error || response.statusText}`);
+                }
+                const result = await response.json();
+                formatFeedbackToHtml(result.style_feedback, 'style-result-text');
+                styleResult.classList.remove('hidden');
+            } catch (error) {
+                console.error('스타일 분석 오류:', error);
+                alert(error.message);
+            } finally {
+                styleLoading.classList.add('hidden');
+                styleAnalysisButton.disabled = false;
+            }
+        });
+        
+        // --- Form Submissions ---
+        const surveyForm = document.getElementById('artb-survey-form');
+        const surveyContainer = document.getElementById('survey-container');
+        const surveyThanks = document.getElementById('survey-thanks');
+        if(surveyForm) {
+            surveyForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(surveyForm);
+                const interests = formData.getAll('interest');
+                const data = { role: formData.get('role'), interests: interests, feedback_text: formData.get('feedback_text')};
+                try {
+                    const response = await fetch(`${backendUrl}/survey`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                    });
+                    if (!response.ok) throw new Error('서버에 문제가 발생했습니다.');
+                    surveyContainer.classList.add('hidden');
+                    surveyThanks.classList.remove('hidden');
+                } catch (error) {
+                    console.error('설문 제출 오류:', error);
+                    alert('설문 제출에 실패했습니다. 잠시 후 다시 시도해주세요.');
+                }
+            });
+        }
+
+        const contactForm = document.getElementById('contact-form');
+        const contactContainer = document.getElementById('contact-container');
+        const contactThanks = document.getElementById('contact-thanks');
+        if(contactForm) {
+            contactForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(contactForm);
+                const data = Object.fromEntries(formData.entries());
+                try {
+                    const response = await fetch(`${backendUrl}/contact`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                    });
+                    if (!response.ok) throw new Error('문의 제출에 실패했습니다.');
+                    contactContainer.classList.add('hidden');
+                    contactThanks.classList.remove('hidden');
+                } catch (error) {
+                    console.error('문의 제출 오류:', error);
+                    alert(error.message);
+                }
+            });
+        }
+        
+        const preregisterForm = document.getElementById('preregister-form');
+        const ctaContainer = document.getElementById('cta-container');
+        const ctaThanks = document.getElementById('cta-thanks');
+        if(preregisterForm){
+            preregisterForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(preregisterForm);
+                const data = Object.fromEntries(formData.entries());
+                try {
+                    const response = await fetch(`${backendUrl}/preregister`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+                    });
+                    if (!response.ok) throw new Error('사전 등록에 실패했습니다.');
+                    ctaContainer.classList.add('hidden');
+                    ctaThanks.classList.remove('hidden');
+                } catch (error) {
+                    console.error('사전 등록 오류:', error);
+                    alert(error.message);
+                }
+            });
+        }
+
+        // --- 스크롤 애니메이션 로직 ---
+        const scrollObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    // observer.unobserve(entry.target); // 이 줄을 주석 처리하거나 삭제
+                } else {
+                    entry.target.classList.remove('is-visible'); // 화면 밖으로 나가면 클래스 제거
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.scroll-fade-in').forEach(el => {
+            scrollObserver.observe(el);
+        });
+
+        // --- Feature Modals Logic ---
+        const featureAi = document.getElementById('feature-ai');
+        const featureExpert = document.getElementById('feature-expert');
+        const featurePortfolio = document.getElementById('feature-portfolio');
+        const modalAi = document.getElementById('modal-ai');
+        const modalExpert = document.getElementById('modal-expert');
+        const modalPortfolio = document.getElementById('modal-portfolio');
+
+        function openModal(modal) { modal.classList.remove('hidden'); }
+        function closeModal(modal) { modal.classList.add('hidden'); }
+
+        featureAi.addEventListener('click', () => openModal(modalAi));
+        featureExpert.addEventListener('click', () => openModal(modalExpert));
+        featurePortfolio.addEventListener('click', () => openModal(modalPortfolio));
+        
+        document.querySelectorAll('.modal-close-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                closeModal(e.target.closest('.modal-backdrop'));
+            });
+        });
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+            backdrop.addEventListener('click', (e) => {
+                if (e.target === backdrop) {
+                    closeModal(backdrop);
+                }
+            });
+        });
+        
+        // --- Portfolio Gallery Logic ---
+        const portfolioGallery = document.getElementById('portfolio-gallery');
+        const portfolioModal = document.getElementById('portfolio-modal');
+        const closePortfolioModalBtn = document.getElementById('close-portfolio-modal');
+        const portfolioModalImage = document.getElementById('portfolio-modal-image');
+        const portfolioModalAiText = document.getElementById('portfolio-modal-ai-text');
+        const portfolioModalAiKeywords = document.getElementById('portfolio-modal-ai-keywords');
+
+        const portfolioData = [
+            { id: 1, image: 'https://placehold.co/600x600/a3e635/4d7c0f?text=Artwork+1', feedback: '### 총평:\n과감한 색상 사용이 돋보이는 인상적인 작품입니다.\n\n### 잘한 점:\n따뜻한 색과 차가운 색의 대비를 통해 주제를 효과적으로 강조했습니다.\n\n### 보완할 점:\n전체적인 구도가 약간 중앙에 치우쳐 있어, 주제를 살짝 옆으로 옮기면 더 역동적인 느낌을 줄 수 있습니다.\n\n### Keywords: #색상 대비, #과감한 표현, #구도 개선' },
+            { id: 2, image: 'https://placehold.co/600x600/fbbf24/b45309?text=Artwork+2', feedback: '### 총평:\n안정적인 구도와 섬세한 묘사가 돋보이는 정물화입니다.\n\n### 잘한 점:\n사물의 질감 표현이 매우 사실적이며, 빛의 방향을 일관되게 잘 표현했습니다.\n\n### 보완할 점:\n배경 처리가 다소 단조로워 보입니다. 배경에 약간의 변화를 주면 그림의 깊이감이 더 살아날 것입니다.\n\n### Keywords: #사실주의, #질감 표현, #안정적인 구도' },
+            { id: 3, image: 'https://placehold.co/600x600/60a5fa/1e40af?text=Artwork+3', feedback: '### 총평:\n역동적인 선의 사용이 인상적인 스케치입니다.\n\n### 잘한 점:\n움직임의 순간을 잘 포착했으며, 강한 필압으로 생동감을 더했습니다.\n\n### 보완할 점:\n인체의 비율이 약간 어색한 부분이 있습니다. 특히 상체와 하체의 길이를 다시 한번 확인해보는 것이 좋습니다.\n\n### Keywords: #드로잉, #역동성, #인체 비율' },
+            { id: 4, image: 'https://placehold.co/600x600/f87171/991b1b?text=Artwork+4', feedback: '### 총평:\n몽환적인 분위기를 자아내는 매력적인 추상화입니다.\n\n### 잘한 점:\n색상의 번짐 효과를 이용해 독특하고 신비로운 느낌을 잘 살렸습니다.\n\n### 보완할 점:\n그림의 주제나 초점이 명확하지 않아 시선이 분산될 수 있습니다. 하나의 강력한 포인트 색상을 추가해보는 것을 추천합니다.\n\n### Keywords: #추상화, #색채, #몽환적' },
+        ];
+
+        portfolioData.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'portfolio-item';
+            div.dataset.portfolioId = item.id;
+            div.innerHTML = `
+                <img src="${item.image}" alt="Portfolio artwork ${item.id}">
+                <div class="overlay">작품 ${item.id}</div>
+            `;
+            portfolioGallery.appendChild(div);
+
+            div.addEventListener('click', () => {
+                const data = portfolioData.find(p => p.id === item.id);
+                if (data) {
+                    portfolioModalImage.src = data.image;
+                    formatFeedbackToHtml(data.feedback, portfolioModalAiText);
+                    openModal(portfolioModal);
+                }
+            });
+        });
+
+        closePortfolioModalBtn.addEventListener('click', () => closeModal(portfolioModal));
+        portfolioModal.addEventListener('click', (e) => {
+            if (e.target === portfolioModal) {
+                closeModal(portfolioModal);
+            }
+        });
+    </script>
 </body>
 </html>
 
