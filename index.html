@@ -458,7 +458,88 @@
         document.querySelectorAll('.mobile-menu-link').forEach(link => {
             link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
         });
+        
+        // 화면 리사이즈 시 오버레이 동기화
+        function resizeOverlayToVideo() {
+          if (!videoElement.videoWidth) return;
+          const r = videoElement.getBoundingClientRect();
+          canvasOverlay.width = r.width; canvasOverlay.height = r.height;
+        }
+        window.addEventListener('resize', resizeOverlayToVideo);
 
+        // 업로드 버튼/드롭존 (모바일/데스크톱)
+        uploadImageButton.addEventListener('click', () => imageFileInput.click());
+        imageFileInput.addEventListener('change', async (e) => {
+          const file = e.target.files?.[0];
+          if (file) await handleImageFile(file);
+          imageFileInput.value = '';
+        });
+        ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); }));
+        ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); }));
+        dropzone.addEventListener('drop', async (e) => {
+          const file = e.dataTransfer?.files?.[0];
+          if (file) await handleImageFile(file);
+        });
+
+        async function handleImageFile(file) {
+          cameraError.classList.add('hidden');
+          resultSection.classList.add('hidden');
+          if (!isCvReady()) {
+            cameraError.textContent = 'OpenCV 로딩 중입니다. 잠시 후 다시 시도하세요.';
+            cameraError.classList.remove('hidden');
+            return;
+          }
+          if (!file.type.startsWith('image/')) {
+            cameraError.textContent = '이미지 파일만 업로드할 수 있습니다.';
+            cameraError.classList.remove('hidden');
+            return;
+          }
+          try {
+            const srcCanvas = await readFileToCanvas(file);
+            const resized = resizeCanvasMax(srcCanvas, 1600);
+            const corners = findLargestQuad(resized);
+            await showCorrectionChoice(resized, corners); // 업로드 경로: 좌표계 일치
+          } catch (err) {
+            console.error(err);
+            cameraError.textContent = '이미지를 불러오는 중 오류가 발생했습니다.';
+            cameraError.classList.remove('hidden');
+          }
+        }
+
+        // 파일을 Canvas로 읽기 (모바일/데스크톱 호환): createImageBitmap → <img>+FileReader fallback
+        async function readFileToCanvas(file) {
+          let imgBitmap = null;
+          if ('createImageBitmap' in window) {
+            try { imgBitmap = await createImageBitmap(file); } catch {}
+          }
+          if (!imgBitmap) {
+        // iOS Safari HEIC 등 대응: FileReader로 dataURL 생성 후 Image 로딩
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject; reader.readAsDataURL(file);
+        });
+        imgBitmap = await new Promise((resolve, reject) => {
+          const im = new Image();
+          im.onload = () => resolve(im);
+          im.onerror = reject; im.src = dataUrl;
+        });
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = imgBitmap.width; canvas.height = imgBitmap.height;
+      canvas.getContext('2d').drawImage(imgBitmap, 0, 0);
+      return canvas;
+    }
+
+    function resizeCanvasMax(srcCanvas, maxSide = 1600) {
+      const { width, height } = srcCanvas;
+      const scale = Math.min(1, maxSide / Math.max(width, height));
+      if (scale === 1) return srcCanvas;
+      const dst = document.createElement('canvas');
+      dst.width = Math.round(width * scale); dst.height = Math.round(height * scale);
+      dst.getContext('2d').drawImage(srcCanvas, 0, 0, dst.width, dst.height);
+      return dst;
+    }
         // --- 카메라 및 OpenCV 로직 ---
         startCameraButton.addEventListener('click', async () => {
             if (stream) stream.getTracks().forEach(track => track.stop());
