@@ -83,6 +83,17 @@
         .feedback-section p {
             color: #4b5563;
         }
+
+        /* 스크롤 애니메이션 효과 */
+        .scroll-fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .scroll-fade-in.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -141,7 +152,7 @@
         </section>
 
         <!-- Features Section -->
-        <section id="features" class="py-20 bg-white">
+        <section id="features" class="py-20 bg-white scroll-fade-in">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold">무엇이 Artb를 특별하게 만드나요?</h2>
@@ -175,7 +186,7 @@
 
 
         <!-- Demo Section -->
-        <section id="demo" class="py-20 bg-gray-100">
+        <section id="demo" class="py-20 bg-gray-100 scroll-fade-in">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold">백문이 불여일견, 직접 경험해보세요</h2>
@@ -229,7 +240,7 @@
         </section>
 
         <!-- Survey Section -->
-        <section id="survey" class="py-20 bg-white">
+        <section id="survey" class="py-20 bg-white scroll-fade-in">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold">더 나은 Artb를 위해, 당신의 목소리를 들려주세요</h2>
@@ -297,9 +308,9 @@
             </div>
         </section>
         
-        <section id="contact" class="py-20 bg-gray-100">
-            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                 <div class="text-center mb-12">
+        <section id="contact" class="py-20 bg-gray-100 scroll-fade-in">
+             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
                     <h2 class="text-3xl font-bold">궁금한 점이 있으신가요?</h2>
                     <p class="text-gray-600 mt-2">파트너십 제휴, 투자 문의 등 어떤 내용이든 편하게 연락주세요.</p>
                 </div>
@@ -329,8 +340,8 @@
             </div>
         </section>
         
-        <section id="cta" class="py-20 bg-white">
-            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <section id="cta" class="py-20 bg-white scroll-fade-in">
+             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                  <div id="cta-container">
                     <h2 class="text-3xl font-bold">새로운 미술 교육의 시작,<br>첫 번째 주인공이 되어주세요.</h2>
                     <p class="mt-4 text-lg text-gray-600">지금 이메일을 등록하시면, Artb 런칭 시 가장 먼저 알려드리고 특별한 할인 혜택을 드립니다.</p>
