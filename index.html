@@ -1,883 +1,732 @@
 <!DOCTYPE html>
 <html lang="ko" class="scroll-smooth">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Artb (아트비) - AI와 전문가가 함께하는 새로운 미술 교육</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.8/dist/web/static/pretendard.css">
-    <!-- OpenCV.js: 실시간 이미지 처리를 위한 라이브러리 -->
-    <script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()"></script>
-    <style>
-        body { font-family: 'Pretendard', sans-serif; }
-        .hero-gradient { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-        .info-box { background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem; }
-        .feature-icon {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Artb (아트비) - AI와 전문가가 함께하는 새로운 미술 교육</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.8/dist/web/static/pretendard.css" />
+
+  <!-- OpenCV.js 로더: onOpenCvReady를 먼저 정의해 레이스 컨디션 방지 -->
+  <script>
+    window.cvLoaded = false;
+    window.onOpenCvReady = function () {
+      if (!window.cv) return;
+      try {
+        if (window.cv instanceof Promise) {
+          window.cv.then(function (cvInstance) {
+            window.cv = cvInstance;
+            cvInstance.onRuntimeInitialized = function () {
+              window.cvLoaded = true;
+              console.log("OpenCV.js ready (promise)");
+            };
+          });
+        } else {
+          window.cv.onRuntimeInitialized = function () {
+            window.cvLoaded = true;
+            console.log("OpenCV.js ready");
+          };
         }
-        .demo-container { position: relative; overflow: hidden; background-color: #000; }
-        #canvasOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; }
-        .modal-content { background-color: white; padding: 2rem; border-radius: 0.5rem; max-width: 90%; width: 600px; }
-        .progress-step { display: flex; align-items: center; opacity: 0.5; transition: opacity 0.3s ease-in-out; }
-        .progress-step.active { opacity: 1; }
-        .progress-step .icon { width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-right: 1rem; transition: background-color 0.3s, color 0.3s; }
-        .progress-step.pending .icon { background-color: #e5e7eb; color: #6b7280; }
-        .progress-step.active .icon { background-color: #4f46e5; color: white; }
-        .progress-step.completed .icon { background-color: #10b981; color: white; }
-        .feedback-section h4 { font-size: 1.1rem; font-weight: 600; color: #1e3a8a; margin-bottom: 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid #ddd; }
-        .feedback-section p { color: #4b5563; }
-        /* 업로드 드롭존 */
-        .dropzone { border: 2px dashed #a5b4fc; background: #f8fafc; }
-        .dropzone.dragover { border-color: #6366f1; background: #eef2ff; }
-    </style>
+      } catch (e) {
+        console.error("OpenCV init error:", e);
+      }
+    };
+  </script>
+  <script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()"></script>
+
+  <style>
+    body { font-family: 'Pretendard', sans-serif; }
+    .hero-gradient { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
+    .info-box { background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 1rem; margin-bottom: 1rem; border-radius: 0.5rem; }
+    .feature-icon { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .demo-container { position: relative; overflow: hidden; background-color: #000; }
+    #canvasOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background-color: white; padding: 2rem; border-radius: 0.5rem; max-width: 90%; width: 600px; }
+    .progress-step { display: flex; align-items: center; opacity: 0.5; transition: opacity 0.3s ease-in-out; }
+    .progress-step.active { opacity: 1; }
+    .progress-step .icon { width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-right: 1rem; transition: background-color 0.3s, color 0.3s; }
+    .progress-step.pending .icon { background-color: #e5e7eb; color: #6b7280; }
+    .progress-step.active .icon { background-color: #4f46e5; color: white; }
+    .progress-step.completed .icon { background-color: #10b981; color: white; }
+    .feedback-section h4 { font-size: 1.1rem; font-weight: 600; color: #1e3a8a; margin-bottom: 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid #ddd; }
+    .feedback-section p { color: #4b5563; }
+    /* 업로드 드롭존 */
+    .dropzone { border: 2px dashed #a5b4fc; background: #f8fafc; }
+    .dropzone.dragover { border-color: #6366f1; background: #eef2ff; }
+  </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
-    <!-- Header -->
-    <header class="bg-white/80 backdrop-blur-lg fixed top-0 left-0 right-0 z-40 shadow-sm">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex-shrink-0">
-                    <a href="#" class="text-2xl font-bold text-indigo-600">Artb</a>
-                </div>
-                <!-- Desktop Navigation -->
-                <nav class="hidden md:flex md:items-center md:space-x-8">
-                    <a href="#features" class="text-gray-600 hover:text-indigo-600 transition">주요 기능</a>
-                    <a href="#demo" class="text-gray-600 hover:text-indigo-600 transition">데모 체험</a>
-                    <a href="#survey" class="text-gray-600 hover:text-indigo-600 transition">설문조사</a>
-                    <a href="#contact" class="text-gray-600 hover:text-indigo-600 transition">문의하기</a>
-                    <a href="#cta" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">사전 등록</a>
-                </nav>
-                <!-- Mobile Menu Button -->
-                <div class="md:hidden">
-                    <button id="mobile-menu-button" class="p-2 rounded-md text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-lg fixed top-0 left-0 right-0 z-40 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex-shrink-0">
+          <a href="#" class="text-2xl font-bold text-indigo-600">Artb</a>
         </div>
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="hidden md:hidden">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="#features" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">주요 기능</a>
-                <a href="#demo" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">데모 체험</a>
-                <a href="#survey" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">설문조사</a>
-                <a href="#contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">문의하기</a>
-                <a href="#cta" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">사전 등록</a>
-            </div>
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex md:items-center md:space-x-8">
+          <a href="#features" class="text-gray-600 hover:text-indigo-600 transition">주요 기능</a>
+          <a href="#demo" class="text-gray-600 hover:text-indigo-600 transition">데모 체험</a>
+          <a href="#survey" class="text-gray-600 hover:text-indigo-600 transition">설문조사</a>
+          <a href="#contact" class="text-gray-600 hover:text-indigo-600 transition">문의하기</a>
+          <a href="#cta" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 transition">사전 등록</a>
+        </nav>
+        <!-- Mobile Menu Button -->
+        <div class="md:hidden">
+          <button id="mobile-menu-button" class="p-2 rounded-md text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
+            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+          </button>
         </div>
-    </header>
-
-    <main class="pt-16">
-        <!-- Hero Section -->
-        <section class="hero-gradient py-20 sm:py-32">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight">
-                    AI와 진짜 전문가가 만나는 곳,<br class="hidden sm:block"> 당신의 잠재력을 깨우는 시간
-                </h1>
-                <p class="mt-6 max-w-2xl mx-auto text-lg text-gray-600">
-                    Artb는 당신의 그림을 AI로 즉시 분석하고, 현직 작가의 깊이 있는 피드백을 더해줍니다. 이제 시간과 장소에 구애받지 말고 최고의 미술 교육을 경험하세요.
-                </p>
-                <div class="mt-10">
-                    <a href="#demo" class="bg-indigo-600 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-lg hover:bg-indigo-700 transition transform hover:scale-105">지금 바로 데모 체험하기</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Features Section -->
-        <section id="features" class="py-20 bg-white">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl font-bold">무엇이 Artb를 특별하게 만드나요?</h2>
-                    <p class="text-gray-600 mt-2">Artb는 기술과 사람의 온기를 결합하여 최상의 학습 경험을 제공합니다.</p>
-                </div>
-                <div class="grid md:grid-cols-3 gap-8">
-                    <div class="text-center p-6 border border-gray-200 rounded-lg hover:shadow-xl transition">
-                         <div class="flex items-center justify-center h-16 w-16 rounded-full feature-icon mx-auto mb-4 text-white">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-2">AI 즉각 피드백</h3>
-                        <p class="text-gray-600">그림을 제출하는 즉시 AI가 구도, 명암, 비율을 분석해 기초를 탄탄하게 잡아줍니다.</p>
-                    </div>
-                    <div class="text-center p-6 border border-gray-200 rounded-lg hover:shadow-xl transition">
-                        <div class="flex items-center justify-center h-16 w-16 rounded-full feature-icon mx-auto mb-4 text-white">
-                           <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-2">전문가 최종 피드백</h3>
-                        <p class="text-gray-600">AI 분석을 바탕으로 현직 작가들이 창의성과 표현력 등 깊이 있는 멘토링을 제공합니다.</p>
-                    </div>
-                    <div class="text-center p-6 border border-gray-200 rounded-lg hover:shadow-xl transition">
-                        <div class="flex items-center justify-center h-16 w-16 rounded-full feature-icon mx-auto mb-4 text-white">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold mb-2">디지털 포트폴리오</h3>
-                        <p class="text-gray-600">모든 그림과 피드백이 자동으로 기록되어, 나의 성장 과정을 한눈에 볼 수 있습니다.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Demo Section -->
-        <section id="demo" class="py-20 bg-gray-100">
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl font-bold">백문이 불여일견, 직접 경험해보세요</h2>
-                    <p class="text-gray-600 mt-2">Artb의 놀라운 이미지 처리 기술과 AI 피드백을 체험해보세요.</p>
-                </div>
-
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <div id="ui-section" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">카메라로 작품 촬영하기</button>
-                            <!-- NEW: 업로드 버튼 -->
-                            <button id="uploadImageButton" class="w-full bg-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-800 transition text-lg">이미지 업로드하기</button>
-                        </div>
-                        <!-- NEW: 드롭존 -->
-                        <div id="dropzone" class="dropzone rounded-lg p-6 text-center text-slate-600">
-                            <p class="font-semibold">여기에 이미지를 드래그 앤 드롭하거나, 위의 "이미지 업로드하기" 버튼을 클릭하세요</p>
-                            <p class="text-sm mt-1">지원 형식: JPG, PNG, HEIC (브라우저 지원 시)</p>
-                        </div>
-                        <!-- 숨김 파일 입력 -->
-                        <input id="imageFileInput" class="hidden" type="file" accept="image/*" />
-
-                        <div id="camera-view" class="hidden relative demo-container rounded-lg">
-                            <video id="videoElement" class="w-full h-full" autoplay playsinline></video>
-                            <canvas id="canvasOverlay"></canvas>
-                            <div class="absolute bottom-4 left-4 right-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-                                <button id="captureButton" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition text-lg">촬영하기</button>
-                                <button id="closeCameraButton" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 transition text-lg">닫기</button>
-                            </div>
-                        </div>
-                        <p id="camera-error" class="hidden text-center text-red-500 p-2 bg-red-50 rounded-md"></p>
-
-                        <div id="result-section" class="hidden mt-6 p-4 border rounded-lg bg-gray-50">
-                            <h3 class="text-xl font-semibold mb-4">최종 분석 결과</h3>
-                            <img id="processedImage" class="w-full rounded-lg mb-4 border" alt="보정된 이미지">
-                            <div id="ai-feedback" class="info-box">
-                                <p class="font-bold text-sky-800">🤖 AI 1차 피드백</p>
-                                <div id="ai-feedback-text" class="space-y-4"></div>
-                            </div>
-                             <div id="expert-feedback-info" class="info-box bg-emerald-50 border-emerald-400">
-                                <p class="font-bold text-emerald-800">👩‍🏫 전문가 최종 피드백</p>
-                                <p>실제 서비스에서는 24시간 내에 전문가의 깊이 있는 피드백이 이 곳에 표시됩니다!</p>
-                            </div>
-                            <!-- AI Style Analysis Feature -->
-                            <div id="style-analysis-container" class="mt-4">
-                                <button id="styleAnalysisButton" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition text-lg">✨ 내 그림 스타일 분석하기</button>
-                                <div id="style-loading" class="hidden text-center p-4">
-                                    <p>AI가 작품의 스타일을 분석 중입니다...</p>
-                                </div>
-                                <div id="style-result" class="hidden mt-4 info-box bg-purple-50 border-purple-400">
-                                    <p class="font-bold text-purple-800">🎨 AI 스타일 분석</p>
-                                    <div id="style-result-text" class="space-y-4"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Survey Section -->
-        <section id="survey" class="py-20 bg-white">
-            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl font-bold">더 나은 Artb를 위해, 당신의 목소리를 들려주세요</h2>
-                    <p class="text-gray-600 mt-2">잠깐의 시간이 Artb를 발전시키는 큰 힘이 됩니다.</p>
-                </div>
-                <div id="survey-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
-                    <form id="artb-survey-form" class="space-y-6">
-                        <div>
-                            <label class="block text-lg font-semibold text-gray-700">1. 당신은 누구신가요?</label>
-                            <div class="mt-2 space-y-2">
-                                <label class="flex items-center">
-                                    <input type="radio" name="role" value="artist_instructor" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" required>
-                                    <span class="ml-3 text-gray-700">현직 작가 또는 미술 강사</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="role" value="student_parent" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                    <span class="ml-3 text-gray-700">학생 또는 학부모</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="role" value="hobbyist" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                    <span class="ml-3 text-gray-700">미술에 관심있는 일반인</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="role" value="other" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
-                                    <span class="ml-3 text-gray-700">기타</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-lg font-semibold text-gray-700">2. Artb 서비스에서 가장 기대되는 기능은 무엇인가요? (중복 선택 가능)</label>
-                            <div class="mt-2 space-y-2">
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="interest" value="ai_feedback" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                    <span class="ml-3 text-gray-700">AI 자동 피드백</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="checkbox" name="interest" value="expert_feedback" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                    <span class="ml-3 text-gray-700">전문가 1:1 피드백</span>
-                                </label>
-                                 <label class="flex items-center">
-                                    <input type="checkbox" name="interest" value="local_content" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                    <span class="ml-3 text-gray-700">우리 지역 작가 콘텐츠</span>
-                                </label>
-                                 <label class="flex items-center">
-                                    <input type="checkbox" name="interest" value="portfolio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                    <span class="ml-3 text-gray-700">디지털 포트폴리오</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div>
-                            <label for="feedback-text" class="block text-lg font-semibold text-gray-700">3. Artb에 바라는 점이나 궁금한 점을 자유롭게 남겨주세요.</label>
-                            <div class="mt-2">
-                                <textarea id="feedback-text" name="feedback_text" rows="4" class="shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2"></textarea>
-                            </div>
-                        </div>
-                        <div>
-                            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">의견 제출하기</button>
-                        </div>
-                    </form>
-                </div>
-                <div id="survey-thanks" class="hidden text-center bg-emerald-100 p-8 rounded-lg border border-emerald-300">
-                    <h3 class="text-2xl font-bold text-emerald-800">소중한 의견 감사합니다!</h3>
-                    <p class="mt-2 text-emerald-700">보내주신 의견을 바탕으로 더 나은 Artb를 만들어가겠습니다.</p>
-                </div>
-            </div>
-        </section>
-        
-        <section id="contact" class="py-20 bg-gray-100">
-            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-                 <div class="text-center mb-12">
-                    <h2 class="text-3xl font-bold">궁금한 점이 있으신가요?</h2>
-                    <p class="text-gray-600 mt-2">파트너십 제휴, 투자 문의 등 어떤 내용이든 편하게 연락주세요.</p>
-                </div>
-                <div id="contact-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
-                    <form id="contact-form" class="space-y-6">
-                        <div>
-                            <label for="contact-name" class="block text-lg font-semibold text-gray-700">이름</label>
-                            <input type="text" id="contact-name" name="name" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required>
-                        </div>
-                         <div>
-                            <label for="contact-email" class="block text-lg font-semibold text-gray-700">이메일</label>
-                            <input type="email" id="contact-email" name="email" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required>
-                        </div>
-                        <div>
-                            <label for="contact-message" class="block text-lg font-semibold text-gray-700">문의 내용</label>
-                            <textarea id="contact-message" name="message" rows="4" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required></textarea>
-                        </div>
-                        <div>
-                            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">문의 보내기</button>
-                        </div>
-                    </form>
-                </div>
-                 <div id="contact-thanks" class="hidden text-center bg-emerald-100 p-8 rounded-lg border border-emerald-300">
-                    <h3 class="text-2xl font-bold text-emerald-800">문의가 성공적으로 전달되었습니다.</h3>
-                    <p class="mt-2 text-emerald-700">검토 후 남겨주신 이메일로 빠르게 회신드리겠습니다.</p>
-                </div>
-            </div>
-        </section>
-        
-        <section id="cta" class="py-20 bg-white">
-            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                 <div id="cta-container">
-                    <h2 class="text-3xl font-bold">새로운 미술 교육의 시작,<br>첫 번째 주인공이 되어주세요.</h2>
-                    <p class="mt-4 text-lg text-gray-600">지금 이메일을 등록하시면, Artb 런칭 시 가장 먼저 알려드리고 특별한 할인 혜택을 드립니다.</p>
-                    <form id="preregister-form" class="mt-8 flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
-                        <input type="email" name="email" placeholder="이메일 주소를 입력하세요" class="flex-grow w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
-                        <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition">사전 등록하기</button>
-                    </form>
-                </div>
-                <div id="cta-thanks" class="hidden text-center bg-emerald-100 p-8 rounded-lg border border-emerald-300">
-                    <h3 class="text-2xl font-bold text-emerald-800">사전 등록이 완료되었습니다!</h3>
-                    <p class="mt-2 text-emerald-700">Artb의 새로운 소식을 가장 먼저 알려드릴게요.</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white">
-        <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-lg font-bold">Artb</p>
-            <p class="mt-2 text-gray-400">&copy; 2025 Artb. All rights reserved. AI와 함께하는 미술 교육의 새로운 기준.</p>
-        </div>
-    </footer>
-
-    <!-- Correction Choice Modal -->
-    <div id="correction-choice-modal" class="modal-backdrop hidden">
-        <div class="modal-content text-center">
-            <h3 class="text-2xl font-bold mb-4">어떤 이미지로 분석할까요?</h3>
-            <p class="text-gray-600 mb-6">AI가 왜곡을 자동 보정했습니다. 원본과 보정본 중 분석에 사용할 이미지를 선택해주세요.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div>
-                    <h4 class="font-semibold mb-2">원본 이미지</h4>
-                    <img id="choice-original-image" class="w-full h-auto rounded-md border" />
-                </div>
-                <div>
-                    <h4 class="font-semibold mb-2">보정된 이미지</h4>
-                    <img id="choice-corrected-image" class="w-full h-auto rounded-md border" />
-                </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button id="analyze-original-btn" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 transition">원본으로 분석</button>
-                <button id="analyze-corrected-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition">보정본으로 분석</button>
-            </div>
-        </div>
+      </div>
     </div>
-    
-    <!-- AI Feedback Progress Modal -->
-    <div id="feedback-progress-modal" class="modal-backdrop hidden">
-        <div class="modal-content">
-            <h3 class="text-2xl font-bold mb-6 text-center">AI가 그림을 분석하고 있습니다</h3>
-            <div class="space-y-4">
-                 <div id="step1" class="progress-step pending">
-                    <div class="icon">🖼️</div><p>AI 분석 요청</p>
-                </div>
-                <div id="step2" class="progress-step pending">
-                    <div class="icon">🧠</div><p>구도 및 형태 평가</p>
-                </div>
-                 <div id="step3" class="progress-step pending">
-                    <div class="icon">🎨</div><p>명암 및 채색 평가</p>
-                </div>
-                 <div id="step4" class="progress-step pending">
-                    <div class="icon">✍️</div><p>최종 피드백 생성</p>
-                </div>
-            </div>
-        </div>
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden">
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+        <a href="#features" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">주요 기능</a>
+        <a href="#demo" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">데모 체험</a>
+        <a href="#survey" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">설문조사</a>
+        <a href="#contact" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">문의하기</a>
+        <a href="#cta" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 mobile-menu-link">사전 등록</a>
+      </div>
     </div>
+  </header>
 
+  <main class="pt-16">
+    <!-- Hero Section -->
+    <section class="hero-gradient py-20 sm:py-32">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight">
+          AI와 진짜 전문가가 만나는 곳,<br class="hidden sm:block" /> 당신의 잠재력을 깨우는 시간
+        </h1>
+        <p class="mt-6 max-w-2xl mx-auto text-lg text-gray-600">
+          Artb는 당신의 그림을 AI로 즉시 분석하고, 현직 작가의 깊이 있는 피드백을 더해줍니다. 이제 시간과 장소에 구애받지 말고 최고의 미술 교육을 경험하세요.
+        </p>
+        <div class="mt-10">
+          <a href="#demo" class="bg-indigo-600 text-white font-bold py-3 px-6 sm:px-8 rounded-full text-lg hover:bg-indigo-700 transition transform hover:scale-105">지금 바로 데모 체험하기</a>
+        </div>
+      </div>
+    </section>
 
-    <script>
-        // --- 중요 ---
-        // 백엔드 서버를 Vercel에 배포한 후, 발급받은 실제 서버 주소로 이 값을 변경해야 합니다.
-        const backendUrl = 'https://artb-backend.vercel.app';
-        
-        // --- 전역 변수 및 DOM 요소 ---
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const startCameraButton = document.getElementById('startCameraButton');
-        const uploadImageButton = document.getElementById('uploadImageButton'); // NEW
-        const imageFileInput = document.getElementById('imageFileInput'); // NEW
-        const dropzone = document.getElementById('dropzone'); // NEW
-        const cameraView = document.getElementById('camera-view');
-        const videoElement = document.getElementById('videoElement');
-        const canvasOverlay = document.getElementById('canvasOverlay');
-        const captureButton = document.getElementById('captureButton');
-        const closeCameraButton = document.getElementById('closeCameraButton');
-        const resultSection = document.getElementById('result-section');
-        const cameraError = document.getElementById('camera-error');
-        let stream = null;
-        let lastImageBlob = null;
-        let originalImageBlob = null;
-        let correctedImageBlob = null;
-        let cvLoaded = false;
-        let processVideoTimeout;
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold">무엇이 Artb를 특별하게 만드나요?</h2>
+          <p class="text-gray-600 mt-2">Artb는 기술과 사람의 온기를 결합하여 최상의 학습 경험을 제공합니다.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="text-center p-6 border border-gray-200 rounded-lg hover:shadow-xl transition">
+            <div class="flex items-center justify-center h-16 w-16 rounded-full feature-icon mx-auto mb-4 text-white">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">AI 즉각 피드백</h3>
+            <p class="text-gray-600">그림을 제출하는 즉시 AI가 구도, 명암, 비율을 분석해 기초를 탄탄하게 잡아줍니다.</p>
+          </div>
+          <div class="text-center p-6 border border-gray-200 rounded-lg hover:shadow-xl transition">
+            <div class="flex items-center justify-center h-16 w-16 rounded-full feature-icon mx-auto mb-4 text-white">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">전문가 최종 피드백</h3>
+            <p class="text-gray-600">AI 분석을 바탕으로 현직 작가들이 창의성과 표현력 등 깊이 있는 멘토링을 제공합니다.</p>
+          </div>
+          <div class="text-center p-6 border border-gray-200 rounded-lg hover:shadow-xl transition">
+            <div class="flex items-center justify-center h-16 w-16 rounded-full feature-icon mx-auto mb-4 text-white">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">디지털 포트폴리오</h3>
+            <p class="text-gray-600">모든 그림과 피드백이 자동으로 기록되어, 나의 성장 과정을 한눈에 볼 수 있습니다.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Demo Section -->
+    <section id="demo" class="py-20 bg-gray-100">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold">백문이 불여일견, 직접 경험해보세요</h2>
+          <p class="text-gray-600 mt-2">Artb의 놀라운 이미지 처리 기술과 AI 피드백을 체험해보세요.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+          <div id="ui-section" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">카메라로 작품 촬영하기</button>
+              <!-- 모바일 카메라 호출 지원을 위해 capture 속성 포함 -->
+              <button id="uploadImageButton" class="w-full bg-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-800 transition text-lg">이미지 업로드하기</button>
+            </div>
 
-        function onOpenCvReady() {
-            if (window.cv) {
-                 if (cv instanceof Promise) {
-                    cv.then(onCvLoaded);
-                } else {
-                    cv.onRuntimeInitialized = () => {
-                        onCvLoaded(cv);
-                    };
-                }
-            }
+            <!-- 드롭존: 데스크톱 우선, 모바일은 버튼 사용 권장 -->
+            <div id="dropzone" class="dropzone rounded-lg p-6 text-center text-slate-600">
+              <p class="font-semibold">여기에 이미지를 드래그 앤 드롭하거나, 위의 "이미지 업로드하기" 버튼을 클릭하세요</p>
+              <p class="text-sm mt-1">지원 형식: JPG, PNG, WEBP (HEIC/HEIF는 브라우저 지원 필요)</p>
+            </div>
+
+            <!-- 숨김 파일 입력 (모바일 & 데스크톱 공용) -->
+            <input id="imageFileInput" class="hidden" type="file" accept="image/*" capture="environment" />
+
+            <div id="camera-view" class="hidden relative demo-container rounded-lg">
+              <video id="videoElement" class="w-full h-full" autoplay playsinline></video>
+              <canvas id="canvasOverlay"></canvas>
+              <div class="absolute bottom-4 left-4 right-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                <button id="captureButton" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition text-lg">촬영하기</button>
+                <button id="closeCameraButton" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 transition text-lg">닫기</button>
+              </div>
+            </div>
+            <p id="camera-error" class="hidden text-center text-red-500 p-2 bg-red-50 rounded-md"></p>
+
+            <div id="result-section" class="hidden mt-6 p-4 border rounded-lg bg-gray-50">
+              <h3 class="text-xl font-semibold mb-4">최종 분석 결과</h3>
+              <img id="processedImage" class="w-full rounded-lg mb-4 border" alt="보정된 이미지" />
+              <div id="ai-feedback" class="info-box">
+                <p class="font-bold text-sky-800">🤖 AI 1차 피드백</p>
+                <div id="ai-feedback-text" class="space-y-4"></div>
+              </div>
+              <div id="expert-feedback-info" class="info-box bg-emerald-50 border-emerald-400">
+                <p class="font-bold text-emerald-800">👩‍🏫 전문가 최종 피드백</p>
+                <p>실제 서비스에서는 24시간 내에 전문가의 깊이 있는 피드백이 이 곳에 표시됩니다!</p>
+              </div>
+              <div id="style-analysis-container" class="mt-4">
+                <button id="styleAnalysisButton" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition text-lg">✨ 내 그림 스타일 분석하기</button>
+                <div id="style-loading" class="hidden text-center p-4"><p>AI가 작품의 스타일을 분석 중입니다...</p></div>
+                <div id="style-result" class="hidden mt-4 info-box bg-purple-50 border-purple-400">
+                  <p class="font-bold text-purple-800">🎨 AI 스타일 분석</p>
+                  <div id="style-result-text" class="space-y-4"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /card -->
+      </div>
+    </section>
+
+    <!-- Survey Section -->
+    <section id="survey" class="py-20 bg-white">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold">더 나은 Artb를 위해, 당신의 목소리를 들려주세요</h2>
+          <p class="text-gray-600 mt-2">잠깐의 시간이 Artb를 발전시키는 큰 힘이 됩니다.</p>
+        </div>
+        <div id="survey-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+          <form id="artb-survey-form" class="space-y-6">
+            <div>
+              <label class="block text-lg font-semibold text-gray-700">1. 당신은 누구신가요?</label>
+              <div class="mt-2 space-y-2">
+                <label class="flex items-center"><input type="radio" name="role" value="artist_instructor" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" required /><span class="ml-3 text-gray-700">현직 작가 또는 미술 강사</span></label>
+                <label class="flex items-center"><input type="radio" name="role" value="student_parent" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" /><span class="ml-3 text-gray-700">학생 또는 학부모</span></label>
+                <label class="flex items-center"><input type="radio" name="role" value="hobbyist" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" /><span class="ml-3 text-gray-700">미술에 관심있는 일반인</span></label>
+                <label class="flex items-center"><input type="radio" name="role" value="other" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300" /><span class="ml-3 text-gray-700">기타</span></label>
+              </div>
+            </div>
+            <div>
+              <label class="block text-lg font-semibold text-gray-700">2. Artb 서비스에서 가장 기대되는 기능은 무엇인가요? (중복 선택 가능)</label>
+              <div class="mt-2 space-y-2">
+                <label class="flex items-center"><input type="checkbox" name="interest" value="ai_feedback" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" /><span class="ml-3 text-gray-700">AI 자동 피드백</span></label>
+                <label class="flex items-center"><input type="checkbox" name="interest" value="expert_feedback" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" /><span class="ml-3 text-gray-700">전문가 1:1 피드백</span></label>
+                <label class="flex items-center"><input type="checkbox" name="interest" value="local_content" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" /><span class="ml-3 text-gray-700">우리 지역 작가 콘텐츠</span></label>
+                <label class="flex items-center"><input type="checkbox" name="interest" value="portfolio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded" /><span class="ml-3 text-gray-700">디지털 포트폴리오</span></label>
+              </div>
+            </div>
+            <div>
+              <label for="feedback-text" class="block text-lg font-semibold text-gray-700">3. Artb에 바라는 점이나 궁금한 점을 자유롭게 남겨주세요.</label>
+              <div class="mt-2"><textarea id="feedback-text" name="feedback_text" rows="4" class="shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2"></textarea></div>
+            </div>
+            <div>
+              <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">의견 제출하기</button>
+            </div>
+          </form>
+        </div>
+        <div id="survey-thanks" class="hidden text-center bg-emerald-100 p-8 rounded-lg border border-emerald-300">
+          <h3 class="text-2xl font-bold text-emerald-800">소중한 의견 감사합니다!</h3>
+          <p class="mt-2 text-emerald-700">보내주신 의견을 바탕으로 더 나은 Artb를 만들어가겠습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="py-20 bg-gray-100">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold">궁금한 점이 있으신가요?</h2>
+          <p class="text-gray-600 mt-2">파트너십 제휴, 투자 문의 등 어떤 내용이든 편하게 연락주세요.</p>
+        </div>
+        <div id="contact-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+          <form id="contact-form" class="space-y-6">
+            <div><label for="contact-name" class="block text-lg font-semibold text-gray-700">이름</label><input type="text" id="contact-name" name="name" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required /></div>
+            <div><label for="contact-email" class="block text-lg font-semibold text-gray-700">이메일</label><input type="email" id="contact-email" name="email" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required /></div>
+            <div><label for="contact-message" class="block text-lg font-semibold text-gray-700">문의 내용</label><textarea id="contact-message" name="message" rows="4" class="mt-2 shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md p-2" required></textarea></div>
+            <div><button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">문의 보내기</button></div>
+          </form>
+        </div>
+        <div id="contact-thanks" class="hidden text-center bg-emerald-100 p-8 rounded-lg border border-emerald-300">
+          <h3 class="text-2xl font-bold text-emerald-800">문의가 성공적으로 전달되었습니다.</h3>
+          <p class="mt-2 text-emerald-700">검토 후 남겨주신 이메일로 빠르게 회신드리겠습니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section id="cta" class="py-20 bg-white">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div id="cta-container">
+          <h2 class="text-3xl font-bold">새로운 미술 교육의 시작,<br />첫 번째 주인공이 되어주세요.</h2>
+          <p class="mt-4 text-lg text-gray-600">지금 이메일을 등록하시면, Artb 런칭 시 가장 먼저 알려드리고 특별한 할인 혜택을 드립니다.</p>
+          <form id="preregister-form" class="mt-8 flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+            <input type="email" name="email" placeholder="이메일 주소를 입력하세요" class="flex-grow w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required />
+            <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition">사전 등록하기</button>
+          </form>
+        </div>
+        <div id="cta-thanks" class="hidden text-center bg-emerald-100 p-8 rounded-lg border border-emerald-300">
+          <h3 class="text-2xl font-bold text-emerald-800">사전 등록이 완료되었습니다!</h3>
+          <p class="mt-2 text-emerald-700">Artb의 새로운 소식을 가장 먼저 알려드릴게요.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white">
+    <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-lg font-bold">Artb</p>
+      <p class="mt-2 text-gray-400">&copy; 2025 Artb. All rights reserved. AI와 함께하는 미술 교육의 새로운 기준.</p>
+    </div>
+  </footer>
+  <!-- Correction Choice Modal -->
+  <div id="correction-choice-modal" class="modal-backdrop hidden">
+    <div class="modal-content text-center">
+      <h3 class="text-2xl font-bold mb-4">어떤 이미지로 분석할까요?</h3>
+      <p class="text-gray-600 mb-6">AI가 왜곡을 자동 보정했습니다. 원본과 보정본 중 분석에 사용할 이미지를 선택해주세요.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div><h4 class="font-semibold mb-2">원본 이미지</h4><img id="choice-original-image" class="w-full h-auto rounded-md border" /></div>
+        <div><h4 class="font-semibold mb-2">보정된 이미지</h4><img id="choice-corrected-image" class="w-full h-auto rounded-md border" /></div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button id="analyze-original-btn" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 transition">원본으로 분석</button>
+        <button id="analyze-corrected-btn" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition">보정본으로 분석</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Feedback Progress Modal -->
+  <div id="feedback-progress-modal" class="modal-backdrop hidden">
+    <div class="modal-content">
+      <h3 class="text-2xl font-bold mb-6 text-center">AI가 그림을 분석하고 있습니다</h3>
+      <div class="space-y-4">
+        <div id="step1" class="progress-step pending"><div class="icon">🖼️</div><p>AI 분석 요청</p></div>
+        <div id="step2" class="progress-step pending"><div class="icon">🧠</div><p>구도 및 형태 평가</p></div>
+        <div id="step3" class="progress-step pending"><div class="icon">🎨</div><p>명암 및 채색 평가</p></div>
+        <div id="step4" class="progress-step pending"><div class="icon">✍️</div><p>최종 피드백 생성</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const backendUrl = 'https://artb-backend.vercel.app';
+
+    // --- 공용 DOM 참조 ---
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const startCameraButton = document.getElementById('startCameraButton');
+    const uploadImageButton = document.getElementById('uploadImageButton');
+    const imageFileInput = document.getElementById('imageFileInput');
+    const dropzone = document.getElementById('dropzone');
+    const cameraView = document.getElementById('camera-view');
+    const videoElement = document.getElementById('videoElement');
+    const canvasOverlay = document.getElementById('canvasOverlay');
+    const captureButton = document.getElementById('captureButton');
+    const closeCameraButton = document.getElementById('closeCameraButton');
+    const resultSection = document.getElementById('result-section');
+    const cameraError = document.getElementById('camera-error');
+    const styleAnalysisButton = document.getElementById('styleAnalysisButton');
+    const styleLoading = document.getElementById('style-loading');
+    const styleResult = document.getElementById('style-result');
+    const styleResultText = document.getElementById('style-result-text');
+
+    // 모달 요소
+    const correctionChoiceModal = document.getElementById('correction-choice-modal');
+    const choiceOriginalImageEl = document.getElementById('choice-original-image');
+    const choiceCorrectedImageEl = document.getElementById('choice-corrected-image');
+    const analyzeOriginalBtn = document.getElementById('analyze-original-btn');
+    const analyzeCorrectedBtn = document.getElementById('analyze-corrected-btn');
+    const feedbackProgressModal = document.getElementById('feedback-progress-modal');
+    const progressSteps = { step1: document.getElementById('step1'), step2: document.getElementById('step2'), step3: document.getElementById('step3'), step4: document.getElementById('step4') };
+
+    // 상태
+    let stream = null;               // MediaStream
+    let lastImageBlob = null;        // 마지막 분석 대상 Blob
+    let originalImageBlob = null;    // 모달에서 고를 원본 Blob
+    let correctedImageBlob = null;   // 모달에서 고를 보정본 Blob
+    let processVideoTimeout;         // 카메라 프레임 타이머
+    let lastDetectedCornersVideo = null; // 비디오 좌표계의 코너들 [{x,y}*4]
+
+    const isCvReady = () => window.cvLoaded === true;
+    const isSecureContext = () => location.protocol === 'https:' || location.hostname === 'localhost';
+
+    // 유틸: 캔버스를 Blob으로 (Safari 대비)
+    function canvasToBlob(canvas, type = 'image/jpeg', quality = 0.92) {
+      return new Promise((resolve) => {
+        if (canvas.toBlob) {
+          canvas.toBlob(resolve, type, quality);
+        } else {
+          const dataUrl = canvas.toDataURL(type, quality);
+          const byteString = atob(dataUrl.split(',')[1]);
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+          resolve(new Blob([ab], { type }));
         }
+      });
+    }
 
-        function onCvLoaded(cvInstance) {
-            window.cv = cvInstance;
-            console.log("OpenCV.js is ready.");
-            cvLoaded = true;
-        }
+    // 모바일 메뉴
+    mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+    document.querySelectorAll('.mobile-menu-link').forEach(link => link.addEventListener('click', () => mobileMenu.classList.add('hidden')));
 
-        // --- 모달 관련 DOM 요소 ---
-        const correctionChoiceModal = document.getElementById('correction-choice-modal');
-        const choiceOriginalImageEl = document.getElementById('choice-original-image');
-        const choiceCorrectedImageEl = document.getElementById('choice-corrected-image');
-        const analyzeOriginalBtn = document.getElementById('analyze-original-btn');
-        const analyzeCorrectedBtn = document.getElementById('analyze-corrected-btn');
-        
-        const feedbackProgressModal = document.getElementById('feedback-progress-modal');
-        const progressSteps = {
-            step1: document.getElementById('step1'),
-            step2: document.getElementById('step2'),
-            step3: document.getElementById('step3'),
-            step4: document.getElementById('step4'),
-        };
+    // 화면 리사이즈 시 오버레이 동기화
+    function resizeOverlayToVideo() {
+      if (!videoElement.videoWidth) return;
+      const r = videoElement.getBoundingClientRect();
+      canvasOverlay.width = r.width; canvasOverlay.height = r.height;
+    }
+    window.addEventListener('resize', resizeOverlayToVideo);
 
-        // --- 모바일 메뉴 ---
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
+    // 업로드 버튼/드롭존 (모바일/데스크톱)
+    uploadImageButton.addEventListener('click', () => imageFileInput.click());
+    imageFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (file) await handleImageFile(file);
+      imageFileInput.value = '';
+    });
+    ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); }));
+    dropzone.addEventListener('drop', async (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file) await handleImageFile(file);
+    });
+
+    async function handleImageFile(file) {
+      cameraError.classList.add('hidden');
+      resultSection.classList.add('hidden');
+      if (!isCvReady()) {
+        cameraError.textContent = 'OpenCV 로딩 중입니다. 잠시 후 다시 시도하세요.';
+        cameraError.classList.remove('hidden');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        cameraError.textContent = '이미지 파일만 업로드할 수 있습니다.';
+        cameraError.classList.remove('hidden');
+        return;
+      }
+      try {
+        const srcCanvas = await readFileToCanvas(file);
+        const resized = resizeCanvasMax(srcCanvas, 1600);
+        const corners = findLargestQuad(resized);
+        await showCorrectionChoice(resized, corners); // 업로드 경로: 좌표계 일치
+      } catch (err) {
+        console.error(err);
+        cameraError.textContent = '이미지를 불러오는 중 오류가 발생했습니다.';
+        cameraError.classList.remove('hidden');
+      }
+    }
+
+    // 파일을 Canvas로 읽기 (모바일/데스크톱 호환): createImageBitmap → <img>+FileReader fallback
+    async function readFileToCanvas(file) {
+      let imgBitmap = null;
+      if ('createImageBitmap' in window) {
+        try { imgBitmap = await createImageBitmap(file); } catch {}
+      }
+      if (!imgBitmap) {
+        // iOS Safari HEIC 등 대응: FileReader로 dataURL 생성 후 Image 로딩
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject; reader.readAsDataURL(file);
         });
-        document.querySelectorAll('.mobile-menu-link').forEach(link => {
-            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+        imgBitmap = await new Promise((resolve, reject) => {
+          const im = new Image();
+          im.onload = () => resolve(im);
+          im.onerror = reject; im.src = dataUrl;
         });
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = imgBitmap.width; canvas.height = imgBitmap.height;
+      canvas.getContext('2d').drawImage(imgBitmap, 0, 0);
+      return canvas;
+    }
 
-        // --- 카메라 및 OpenCV 로직 ---
-        startCameraButton.addEventListener('click', async () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            clearTimeout(processVideoTimeout);
-            cameraError.classList.add('hidden');
-            resultSection.classList.add('hidden');
-            
-            if (!cvLoaded) {
-                cameraError.textContent = "카메라 기능을 로드 중입니다. 잠시 후 다시 시도해주세요.";
-                cameraError.classList.remove('hidden');
-                return;
-            }
+    function resizeCanvasMax(srcCanvas, maxSide = 1600) {
+      const { width, height } = srcCanvas;
+      const scale = Math.min(1, maxSide / Math.max(width, height));
+      if (scale === 1) return srcCanvas;
+      const dst = document.createElement('canvas');
+      dst.width = Math.round(width * scale); dst.height = Math.round(height * scale);
+      dst.getContext('2d').drawImage(srcCanvas, 0, 0, dst.width, dst.height);
+      return dst;
+    }
 
-            try {
-                if (location.protocol !== 'https:' || !navigator.mediaDevices) {
-                    throw new Error('카메라는 보안 연결(HTTPS)된 페이지에서만 사용할 수 있습니다.');
-                }
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
-                });
-                cameraView.classList.remove('hidden');
-                startCameraButton.textContent = '카메라 재시작';
-                videoElement.srcObject = stream;
-                videoElement.onloadedmetadata = () => {
-                    resizeCanvas();
-                    processVideo(); 
-                };
-            } catch (err) {
-                console.error("카메라 접근 오류:", err);
-                cameraError.textContent = err.message || "카메라에 접근할 수 없습니다. 브라우저의 카메라 권한을 확인해주세요.";
-                cameraError.classList.remove('hidden');
-                cameraView.classList.add('hidden');
-            }
+    // 카메라 시작 (모바일/데스크톱)
+    startCameraButton.addEventListener('click', async () => {
+      if (!isSecureContext()) {
+        cameraError.textContent = '카메라는 HTTPS 환경에서만 동작합니다.';
+        cameraError.classList.remove('hidden');
+        return;
+      }
+      if (!isCvReady()) {
+        cameraError.textContent = 'OpenCV 로딩 중입니다. 잠시 후 다시 시도하세요.';
+        cameraError.classList.remove('hidden');
+        return;
+      }
+      try {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        clearTimeout(processVideoTimeout);
+        cameraError.classList.add('hidden'); resultSection.classList.add('hidden');
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
         });
+        cameraView.classList.remove('hidden');
+        startCameraButton.textContent = '카메라 재시작';
+        videoElement.srcObject = stream;
+        videoElement.onloadedmetadata = () => { resizeOverlayToVideo(); processVideoLoop(); };
+      } catch (err) {
+        console.error('카메라 접근 오류:', err);
+        cameraError.textContent = err.message || '카메라에 접근할 수 없습니다. 브라우저 권한을 확인해주세요.';
+        cameraError.classList.remove('hidden');
+        cameraView.classList.add('hidden');
+      }
+    });
 
-        function resizeCanvas() {
-            if (!videoElement.videoWidth) return;
-            const videoRect = videoElement.getBoundingClientRect();
-            canvasOverlay.width = videoRect.width;
-            canvasOverlay.height = videoRect.height;
+    // 비디오 프레임 처리 루프
+    function processVideoLoop() {
+      if (!stream?.active || !isCvReady()) return;
+      const vw = videoElement.videoWidth, vh = videoElement.videoHeight;
+      if (!vw || !vh) { processVideoTimeout = setTimeout(processVideoLoop, 100); return; }
+
+      const tmp = document.createElement('canvas');
+      tmp.width = vw; tmp.height = vh;
+      tmp.getContext('2d', { willReadFrequently: true }).drawImage(videoElement, 0, 0, vw, vh);
+
+      const quad = findLargestQuad(tmp); // 비디오 좌표계의 코너
+      const octx = canvasOverlay.getContext('2d');
+      octx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
+
+      if (quad) {
+        lastDetectedCornersVideo = quad; // [{x,y} in video space]
+        // 오버레이에 스케일 적용하여 그리기
+        const sx = canvasOverlay.width / vw, sy = canvasOverlay.height / vh;
+        octx.beginPath(); octx.moveTo(quad[0].x * sx, quad[0].y * sy);
+        for (let i = 1; i < 4; i++) octx.lineTo(quad[i].x * sx, quad[i].y * sy);
+        octx.closePath(); octx.strokeStyle = 'rgba(74, 222, 128, 0.9)'; octx.lineWidth = 4; octx.stroke();
+      } else {
+        lastDetectedCornersVideo = null;
+      }
+      processVideoTimeout = setTimeout(processVideoLoop, 60);
+    }
+
+    // 최대 사각형(문서) 검출: 반환 [{x,y}*4] 또는 null (좌표는 입력 캔버스 기준)
+    function findLargestQuad(canvas) {
+      const src = cv.imread(canvas);
+      const gray = new cv.Mat(); cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+      cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
+      const edges = new cv.Mat(); cv.Canny(gray, edges, 50, 150);
+      const contours = new cv.MatVector(); const hierarchy = new cv.Mat();
+      cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+      let maxArea = 0, best = null; const minArea = (canvas.width * canvas.height) / 10;
+      for (let i = 0; i < contours.size(); i++) {
+        const cnt = contours.get(i); const area = cv.contourArea(cnt);
+        if (area > minArea) {
+          const peri = cv.arcLength(cnt, true); const approx = new cv.Mat();
+          cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
+          if (approx.rows === 4 && area > maxArea) {
+            maxArea = area; best = [];
+            for (let j = 0; j < 4; j++) best.push({ x: approx.data32S[j*2], y: approx.data32S[j*2+1] });
+          }
+          approx.delete();
         }
+        cnt.delete();
+      }
+      src.delete(); gray.delete(); edges.delete(); contours.delete(); hierarchy.delete();
+      return best;
+    }
+    // 촬영 → 분석 선택
+    captureButton.addEventListener('click', async () => {
+      clearTimeout(processVideoTimeout);
+      const canvas = document.createElement('canvas');
+      canvas.width = videoElement.videoWidth; canvas.height = videoElement.videoHeight;
+      canvas.getContext('2d').drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      cameraView.classList.add('hidden');
+      await showCorrectionChoice(canvas, lastDetectedCornersVideo); // 카메라 경로: 비디오 좌표계 그대로 전달
+    });
 
-        window.addEventListener('resize', resizeCanvas);
+    closeCameraButton.addEventListener('click', () => {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      clearTimeout(processVideoTimeout);
+      cameraView.classList.add('hidden'); cameraError.classList.add('hidden');
+      startCameraButton.textContent = '카메라로 작품 촬영하기';
+    });
 
-        let lastDetectedCorners = null;
+    // 보정 선택 모달 표시 (corners는 originalCanvas 좌표계 기준이어야 함)
+    async function showCorrectionChoice(originalCanvas, corners) {
+      originalImageBlob = await canvasToBlob(originalCanvas, 'image/jpeg', 0.92);
+      if (!corners) {
+        console.log('자동 보정 실패 → 원본으로 바로 분석');
+        startAiAnalysis(originalImageBlob); return;
+      }
+      choiceOriginalImageEl.src = originalCanvas.toDataURL('image/jpeg', 0.9);
 
-        function processVideo() {
-            if (!stream?.active || !cvLoaded) return;
-            
-            const videoWidth = videoElement.videoWidth;
-            const videoHeight = videoElement.videoHeight;
-            if (videoWidth === 0 || videoHeight === 0) {
-                 processVideoTimeout = setTimeout(processVideo, 100);
-                 return;
-            }
+      // 코너 정렬 (상단-하단, 좌-우) — 업로드/카메라 모두 동일 좌표계로 전달됨
+      const sorted = sortQuadCorners(corners);
+      const dsize = new cv.Size(originalCanvas.width, originalCanvas.height);
+      const srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+        sorted[0].x, sorted[0].y,  // TL
+        sorted[1].x, sorted[1].y,  // TR
+        sorted[2].x, sorted[2].y,  // BR
+        sorted[3].x, sorted[3].y   // BL
+      ]);
+      const dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, dsize.width, 0, dsize.width, dsize.height, 0, dsize.height]);
+      const srcMat = cv.imread(originalCanvas);
+      const M = cv.getPerspectiveTransform(srcTri, dstTri);
+      const dstMat = new cv.Mat();
+      cv.warpPerspective(srcMat, dstMat, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
+      const correctedCanvas = document.createElement('canvas');
+      cv.imshow(correctedCanvas, dstMat);
+      correctedImageBlob = await canvasToBlob(correctedCanvas, 'image/jpeg', 0.92);
+      choiceCorrectedImageEl.src = correctedCanvas.toDataURL('image/jpeg', 0.9);
+      srcMat.delete(); dstMat.delete(); M.delete(); srcTri.delete(); dstTri.delete();
+      correctionChoiceModal.classList.remove('hidden');
+    }
 
-            const canvas = document.createElement('canvas');
-            canvas.width = videoWidth;
-            canvas.height = videoHeight;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            ctx.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
+    function sortQuadCorners(points) {
+      // points: [{x,y}*4]
+      const sorted = [...points].sort((a, b) => a.y - b.y);
+      const top = [sorted[0], sorted[1]].sort((a, b) => a.x - b.x);
+      const bottom = [sorted[2], sorted[3]].sort((a, b) => a.x - b.x);
+      return [top[0], top[1], bottom[1], bottom[0]]; // TL, TR, BR, BL
+    }
 
-            const bestContour = findLargestQuad(canvas);
+    analyzeOriginalBtn.addEventListener('click', () => startAiAnalysis(originalImageBlob));
+    analyzeCorrectedBtn.addEventListener('click', () => startAiAnalysis(correctedImageBlob));
 
-            const overlayCtx = canvasOverlay.getContext('2d');
-            overlayCtx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
+    function updateProgressStep(stepId, status, text) {
+      const step = progressSteps[stepId]; if (!step) return;
+      step.className = 'progress-step'; step.classList.add(status); step.querySelector('p').textContent = text;
+    }
 
-            if (bestContour) {
-                const points = bestContour.map(p => ({
-                    x: p.x * (canvasOverlay.width / videoWidth),
-                    y: p.y * (canvasOverlay.height / videoHeight)
-                }));
-                lastDetectedCorners = points; 
+    async function startAiAnalysis(imageBlob) {
+      correctionChoiceModal.classList.add('hidden');
+      feedbackProgressModal.classList.remove('hidden');
+      Object.values(progressSteps).forEach(s => s.className = 'progress-step pending');
+      setTimeout(() => updateProgressStep('step1', 'active', 'AI 분석 요청'), 100);
+      submitForAnalysis(imageBlob);
+    }
 
-                overlayCtx.beginPath();
-                overlayCtx.moveTo(points[0].x, points[0].y);
-                for (let i = 1; i < 4; i++) overlayCtx.lineTo(points[i].x, points[i].y);
-                overlayCtx.closePath();
-                overlayCtx.strokeStyle = 'rgba(74, 222, 128, 0.9)';
-                overlayCtx.lineWidth = 4;
-                overlayCtx.stroke();
-            } else {
-                 lastDetectedCorners = null;
-            }
-            
-            processVideoTimeout = setTimeout(processVideo, 50); 
-        }
+    async function submitForAnalysis(imageBlob) {
+      lastImageBlob = imageBlob;
+      updateProgressStep('step1', 'completed', 'AI 분석 요청 완료');
+      setTimeout(() => updateProgressStep('step2', 'active', '구도 및 형태 평가'), 300);
 
-        // NEW: 파일 업로드 처리 (버튼 & 드롭존)
-        uploadImageButton.addEventListener('click', () => imageFileInput.click());
-        imageFileInput.addEventListener('change', async (e) => {
-            const file = e.target.files?.[0];
-            if (file) await handleImageFile(file);
-            imageFileInput.value = '';
-        });
+      const formData = new FormData();
+      formData.append('image', imageBlob, 'artwork.jpg');
+      try {
+        const resp = await fetch(`${backendUrl}/analyze`, { method: 'POST', body: formData });
+        if (!resp.ok) throw new Error(`서버 오류: ${resp.status} ${resp.statusText}`);
+        const result = await resp.json();
+        updateProgressStep('step2', 'completed', '구도 및 형태 평가 완료');
+        setTimeout(() => updateProgressStep('step3', 'active', '명암 및 채색 평가'), 300);
+        setTimeout(() => updateProgressStep('step3', 'completed', '명암 및 채색 평가 완료'), 1200);
+        setTimeout(() => updateProgressStep('step4', 'active', '최종 피드백 생성'), 1500);
+        setTimeout(() => {
+          updateProgressStep('step4', 'completed', '최종 피드백 생성 완료!');
+          setTimeout(() => {
+            feedbackProgressModal.classList.add('hidden');
+            displayResults({ processed_image_url: URL.createObjectURL(imageBlob), ai_feedback: { feedback_text: result.feedback } });
+          }, 300);
+        }, 2000);
+      } catch (err) {
+        console.error('분석 요청 실패:', err);
+        feedbackProgressModal.classList.add('hidden');
+        cameraError.textContent = 'AI 분석에 실패했습니다. 서버 상태를 확인하거나 잠시 후 다시 시도해주세요.';
+        cameraError.classList.remove('hidden');
+      }
+    }
 
-        // 드래그 앤 드롭
-        ;['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => {
-            e.preventDefault(); e.stopPropagation();
-            dropzone.classList.add('dragover');
-        }));
-        ;['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => {
-            e.preventDefault(); e.stopPropagation();
-            dropzone.classList.remove('dragover');
-        }));
-        dropzone.addEventListener('drop', async (e) => {
-            const file = e.dataTransfer?.files?.[0];
-            if (file) await handleImageFile(file);
-        });
+    function formatFeedbackToHtml(text) {
+      if (!text) return '<p>피드백이 비어 있습니다.</p>';
+      const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
+      let html = '';
+      for (let i = 0; i < sections.length; i += 2) {
+        const title = sections[i].replace(/:/g, '');
+        const content = sections[i + 1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
+        html += `<div class="feedback-section mb-4"><h4>${title}</h4><p>${content}</p></div>`;
+      }
+      return html || `<div class="feedback-section mb-4"><h4>Feedback</h4><p>${text}</p></div>`;
+    }
 
-        async function handleImageFile(file) {
-            cameraError.classList.add('hidden');
-            resultSection.classList.add('hidden');
-            if (!cvLoaded) {
-                cameraError.textContent = 'OpenCV 로딩 중입니다. 잠시 후 다시 시도하세요.';
-                cameraError.classList.remove('hidden');
-                return;
-            }
-            if (!file.type.startsWith('image/')) {
-                cameraError.textContent = '이미지 파일만 업로드할 수 있습니다.';
-                cameraError.classList.remove('hidden');
-                return;
-            }
-            try {
-                const canvas = await readFileToCanvas(file);
-                // 정사각/대형 이미지 리사이즈(최대 1600px)로 메모리 절약
-                const resized = resizeCanvasMax(canvas, 1600);
-                const corners = findLargestQuad(resized);
-                showCorrectionChoice(resized, corners);
-            } catch (err) {
-                console.error(err);
-                cameraError.textContent = '이미지를 불러오는 중 오류가 발생했습니다.';
-                cameraError.classList.remove('hidden');
-            }
-        }
+    function displayResults(data) {
+      resultSection.classList.remove('hidden');
+      document.getElementById('processedImage').src = data.processed_image_url;
+      document.getElementById('ai-feedback-text').innerHTML = formatFeedbackToHtml(data.ai_feedback.feedback_text);
+      document.getElementById('style-analysis-container').classList.remove('hidden');
+      document.getElementById('style-result').classList.add('hidden');
+    }
 
-        async function readFileToCanvas(file) {
-            const url = URL.createObjectURL(file);
-            try {
-                const img = await createImageBitmap(file).catch(async () => {
-                    return await new Promise((resolve, reject) => {
-                        const im = new Image();
-                        im.onload = () => resolve(im);
-                        im.onerror = reject;
-                        im.src = url;
-                    });
-                });
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width; canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                return canvas;
-            } finally {
-                URL.revokeObjectURL(url);
-            }
-        }
+    styleAnalysisButton.addEventListener('click', async () => {
+      if (!lastImageBlob) return;
+      styleLoading.classList.remove('hidden'); styleResult.classList.add('hidden'); styleAnalysisButton.disabled = true;
+      const fd = new FormData(); fd.append('image', lastImageBlob, 'artwork.jpg');
+      try {
+        const resp = await fetch(`${backendUrl}/analyze-style`, { method: 'POST', body: fd });
+        if (!resp.ok) throw new Error('스타일 분석에 실패했습니다.');
+        const result = await resp.json();
+        styleResultText.innerHTML = formatFeedbackToHtml(result.style_feedback);
+        styleResult.classList.remove('hidden');
+      } catch (e) { console.error('스타일 분석 오류:', e); alert(e.message); }
+      finally { styleLoading.classList.add('hidden'); styleAnalysisButton.disabled = false; }
+    });
 
-        function resizeCanvasMax(srcCanvas, maxSide = 1600) {
-            const { width, height } = srcCanvas;
-            const scale = Math.min(1, maxSide / Math.max(width, height));
-            if (scale === 1) return srcCanvas;
-            const dst = document.createElement('canvas');
-            dst.width = Math.round(width * scale);
-            dst.height = Math.round(height * scale);
-            const ctx = dst.getContext('2d');
-            ctx.drawImage(srcCanvas, 0, 0, dst.width, dst.height);
-            return dst;
-        }
+    // 설문 / 문의 / 사전등록 제출
+    const surveyForm = document.getElementById('artb-survey-form');
+    const surveyContainer = document.getElementById('survey-container');
+    const surveyThanks = document.getElementById('survey-thanks');
+    if (surveyForm) surveyForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(surveyForm); const interests = fd.getAll('interest');
+      const payload = { role: fd.get('role'), interests, feedback_text: fd.get('feedback_text') };
+      try {
+        const r = await fetch(`${backendUrl}/survey`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!r.ok) throw new Error('서버에 문제가 발생했습니다.');
+        surveyContainer.classList.add('hidden'); surveyThanks.classList.remove('hidden');
+      } catch (e) { console.error('설문 제출 오류:', e); alert('설문 제출에 실패했습니다. 잠시 후 다시 시도해주세요.'); }
+    });
 
-        // 공통: 최대 사각형(문서) 검출
-        function findLargestQuad(canvas) {
-            const src = cv.imread(canvas);
-            let gray = new cv.Mat();
-            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-            cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-            let edges = new cv.Mat();
-            cv.Canny(gray, edges, 50, 150);
+    const contactForm = document.getElementById('contact-form');
+    const contactContainer = document.getElementById('contact-container');
+    const contactThanks = document.getElementById('contact-thanks');
+    if (contactForm) contactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(contactForm); const data = Object.fromEntries(fd.entries());
+      try {
+        const r = await fetch(`${backendUrl}/contact`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        if (!r.ok) throw new Error('문의 제출에 실패했습니다.');
+        contactContainer.classList.add('hidden'); contactThanks.classList.remove('hidden');
+      } catch (e) { console.error('문의 제출 오류:', e); alert(e.message); }
+    });
 
-            let contours = new cv.MatVector();
-            let hierarchy = new cv.Mat();
-            cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
-
-            let maxArea = 0;
-            let best = null;
-            const minArea = (canvas.width * canvas.height) / 10;
-
-            for (let i = 0; i < contours.size(); ++i) {
-                const cnt = contours.get(i);
-                const area = cv.contourArea(cnt);
-                if (area > minArea) {
-                    const peri = cv.arcLength(cnt, true);
-                    const approx = new cv.Mat();
-                    cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
-                    if (approx.rows === 4) {
-                        if (area > maxArea) {
-                            maxArea = area;
-                            best = [];
-                            for (let j = 0; j < 4; j++) {
-                                best.push({ x: approx.data32S[j*2], y: approx.data32S[j*2+1] });
-                            }
-                        }
-                    }
-                    approx.delete();
-                }
-                cnt.delete();
-            }
-            src.delete(); gray.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-            return best; // [{x,y} * 4] 또는 null
-        }
-
-        const captureButton = document.getElementById('captureButton');
-        captureButton.addEventListener('click', () => {
-            clearTimeout(processVideoTimeout);
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-            
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            cameraView.classList.add('hidden');
-            
-            showCorrectionChoice(canvas, lastDetectedCorners);
-        });
-
-        closeCameraButton.addEventListener('click', () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            clearTimeout(processVideoTimeout);
-            cameraView.classList.add('hidden');
-            cameraError.classList.add('hidden');
-            startCameraButton.textContent = '카메라로 작품 촬영하기';
-        });
-
-        function showCorrectionChoice(originalCanvas, corners) {
-            originalCanvas.toBlob(blob => {
-                originalImageBlob = blob;
-                if (!corners) {
-                    console.log("자동 보정 실패, 원본 이미지로 분석을 시작합니다.");
-                    startAiAnalysis(originalImageBlob);
-                    return;
-                }
-                
-                choiceOriginalImageEl.src = originalCanvas.toDataURL('image/jpeg');
-                
-                let src = cv.imread(originalCanvas);
-                // 코너 정렬 (상단-하단, 좌-우)
-                corners.sort((a, b) => a.y - b.y);
-                const topPoints = [corners[0], corners[1]].sort((a, b) => a.x - b.x);
-                const bottomPoints = [corners[2], corners[3]].sort((a, b) => a.x - b.x);
-                const sortedCorners = [...topPoints, ...bottomPoints];
-
-                const dsize = new cv.Size(originalCanvas.width, originalCanvas.height);
-                let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                    sortedCorners[0].x, sortedCorners[0].y,
-                    sortedCorners[1].x, sortedCorners[1].y,
-                    sortedCorners[2].x, sortedCorners[2].y,
-                    sortedCorners[3].x, sortedCorners[3].y,
-                ]);
-                let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, dsize.width, 0, dsize.width, dsize.height, 0, dsize.height]);
-                let M = cv.getPerspectiveTransform(srcTri, dstTri);
-                let dst = new cv.Mat();
-                cv.warpPerspective(src, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
-                
-                const correctedCanvas = document.createElement('canvas');
-                cv.imshow(correctedCanvas, dst);
-                choiceCorrectedImageEl.src = correctedCanvas.toDataURL('image/jpeg');
-                correctedCanvas.toBlob(blob => { correctedImageBlob = blob; }, 'image/jpeg');
-                
-                src.delete(); dst.delete(); M.delete(); srcTri.delete(); dstTri.delete();
-                
-                correctionChoiceModal.classList.remove('hidden');
-            }, 'image/jpeg');
-        }
-
-        analyzeOriginalBtn.addEventListener('click', () => startAiAnalysis(originalImageBlob));
-        analyzeCorrectedBtn.addEventListener('click', () => startAiAnalysis(correctedImageBlob));
-
-        async function startAiAnalysis(imageBlob) {
-            correctionChoiceModal.classList.add('hidden');
-            feedbackProgressModal.classList.remove('hidden');
-            
-            Object.values(progressSteps).forEach(step => step.className = 'progress-step pending');
-            
-            setTimeout(() => updateProgressStep('step1', 'active', 'AI 분석 요청'), 100);
-            
-            submitForAnalysis(imageBlob);
-        }
-
-        function updateProgressStep(stepId, status, text) {
-            const step = progressSteps[stepId];
-            if (!step) return;
-            step.className = 'progress-step';
-            step.classList.add(status);
-            step.querySelector('p').textContent = text;
-        }
-
-        async function submitForAnalysis(imageBlob) {
-            lastImageBlob = imageBlob;
-            updateProgressStep('step1', 'completed', 'AI 분석 요청 완료');
-            setTimeout(() => updateProgressStep('step2', 'active', '구도 및 형태 평가'), 500);
-
-            const formData = new FormData();
-            formData.append('image', imageBlob, 'artwork.jpg');
-
-            try {
-                const response = await fetch(`${backendUrl}/analyze`, { method: 'POST', body: formData });
-                if (!response.ok) throw new Error(`서버 오류: ${response.statusText}`);
-
-                const result = await response.json();
-                
-                updateProgressStep('step2', 'completed', '구도 및 형태 평가 완료');
-                setTimeout(() => updateProgressStep('step3', 'active', '명암 및 채색 평가'), 500);
-                setTimeout(() => updateProgressStep('step3', 'completed', '명암 및 채색 평가 완료'), 1500);
-                setTimeout(() => updateProgressStep('step4', 'active', '최종 피드백 생성'), 2000);
-                
-                setTimeout(() => {
-                    updateProgressStep('step4', 'completed', '최종 피드백 생성 완료!');
-                    setTimeout(() => {
-                        feedbackProgressModal.classList.add('hidden');
-                        displayResults({
-                            processed_image_url: URL.createObjectURL(imageBlob),
-                            ai_feedback: { feedback_text: result.feedback }
-                        });
-                    }, 500);
-                }, 2500);
-
-            } catch (error) {
-                feedbackProgressModal.classList.add('hidden');
-                console.error("분석 요청 실패:", error);
-                cameraError.textContent = "AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.";
-                cameraError.classList.remove('hidden');
-            }
-        }
-        
-        function formatFeedbackToHtml(text) {
-            const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
-            let html = '';
-            for (let i = 0; i < sections.length; i += 2) {
-                const title = sections[i].replace(/:/g, '');
-                const content = sections[i + 1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
-                html += `<div class="feedback-section mb-4"><h4>${title}</h4><p>${content}</p></div>`;
-            }
-            return html;
-        }
-        
-        function displayResults(data) {
-            resultSection.classList.remove('hidden');
-            document.getElementById('processedImage').src = data.processed_image_url;
-            document.getElementById('ai-feedback-text').innerHTML = formatFeedbackToHtml(data.ai_feedback.feedback_text);
-            document.getElementById('style-analysis-container').classList.remove('hidden');
-            document.getElementById('style-result').classList.add('hidden');
-        }
-        
-        const styleAnalysisButton = document.getElementById('styleAnalysisButton');
-        const styleLoading = document.getElementById('style-loading');
-        const styleResult = document.getElementById('style-result');
-        const styleResultText = document.getElementById('style-result-text');
-
-        styleAnalysisButton.addEventListener('click', async () => {
-            if (!lastImageBlob) return;
-            styleLoading.classList.remove('hidden');
-            styleResult.classList.add('hidden');
-            styleAnalysisButton.disabled = true;
-
-            const formData = new FormData();
-            formData.append('image', lastImageBlob, 'artwork.jpg');
-
-            try {
-                const response = await fetch(`${backendUrl}/analyze-style`, {
-                    method: 'POST', body: formData,
-                });
-                if (!response.ok) throw new Error('스타일 분석에 실패했습니다.');
-                const result = await response.json();
-                styleResultText.innerHTML = formatFeedbackToHtml(result.style_feedback);
-                styleResult.classList.remove('hidden');
-            } catch (error) {
-                console.error('스타일 분석 오류:', error);
-                alert(error.message);
-            } finally {
-                styleLoading.classList.add('hidden');
-                styleAnalysisButton.disabled = false;
-            }
-        });
-        
-        // --- Other form submissions ---
-        const surveyForm = document.getElementById('artb-survey-form');
-        const surveyContainer = document.getElementById('survey-container');
-        const surveyThanks = document.getElementById('survey-thanks');
-        if(surveyForm) {
-            surveyForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const formData = new FormData(surveyForm);
-                const interests = formData.getAll('interest');
-                const data = { role: formData.get('role'), interests: interests, feedback_text: formData.get('feedback_text')};
-                try {
-                    const response = await fetch(`${backendUrl}/survey`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                    });
-                    if (!response.ok) throw new Error('서버에 문제가 발생했습니다.');
-                    surveyContainer.classList.add('hidden');
-                    surveyThanks.classList.remove('hidden');
-                } catch (error) {
-                    console.error('설문 제출 오류:', error);
-                    alert('설문 제출에 실패했습니다. 잠시 후 다시 시도해주세요.');
-                }
-            });
-        }
-
-
-        const contactForm = document.getElementById('contact-form');
-        const contactContainer = document.getElementById('contact-container');
-        const contactThanks = document.getElementById('contact-thanks');
-        if(contactForm) {
-            contactForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const formData = new FormData(contactForm);
-                const data = Object.fromEntries(formData.entries());
-                try {
-                    const response = await fetch(`${backendUrl}/contact`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                    });
-                    if (!response.ok) throw new Error('문의 제출에 실패했습니다.');
-                    contactContainer.classList.add('hidden');
-                    contactThanks.classList.remove('hidden');
-                } catch (error) {
-                    console.error('문의 제출 오류:', error);
-                    alert(error.message);
-                }
-            });
-        }
-        
-        const preregisterForm = document.getElementById('preregister-form');
-        const ctaContainer = document.getElementById('cta-container');
-        const ctaThanks = document.getElementById('cta-thanks');
-        if(preregisterForm){
-            preregisterForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const formData = new FormData(preregisterForm);
-                const data = Object.fromEntries(formData.entries());
-                try {
-                    const response = await fetch(`${backendUrl}/preregister`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                    });
-                    if (!response.ok) throw new Error('사전 등록에 실패했습니다.');
-                    ctaContainer.classList.add('hidden');
-                    ctaThanks.classList.remove('hidden');
-                } catch (error) {
-                    console.error('사전 등록 오류:', error);
-                    alert(error.message);
-                }
-            });
-        }
-    </script>
+    const preregisterForm = document.getElementById('preregister-form');
+    const ctaContainer = document.getElementById('cta-container');
+    const ctaThanks = document.getElementById('cta-thanks');
+    if (preregisterForm) preregisterForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(preregisterForm); const data = Object.fromEntries(fd.entries());
+      try {
+        const r = await fetch(`${backendUrl}/preregister`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        if (!r.ok) throw new Error('사전 등록에 실패했습니다.');
+        ctaContainer.classList.add('hidden'); ctaThanks.classList.remove('hidden');
+      } catch (e) { console.error('사전 등록 오류:', e); alert(e.message); }
+    });
+  </script>
 </body>
 </html>
