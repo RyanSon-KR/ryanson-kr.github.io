@@ -145,17 +145,6 @@ body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: 
     padding-left: 2rem;
 }
 
-/* 스크롤 애니메이션 효과 */
-.scroll-fade-in {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-}
-.scroll-fade-in.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
 /* 드래그 앤 드롭 영역 스타일 */
 #drop-zone {
     border: 2px dashed #94a3b8;
@@ -204,3 +193,4 @@ body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: 
     margin-right: 0.5rem;
     vertical-align: middle;
 }
+
