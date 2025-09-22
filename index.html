@@ -380,7 +380,12 @@
     <!-- AI Feedback Progress Modal -->
     <div id="feedback-progress-modal" class="modal-backdrop hidden">
         <div class="modal-content">
-            <h3 class="text-2xl font-bold mb-6 text-center">AI가 그림을 분석하고 있습니다</h3>
+            <h3 class="text-2xl font-bold mb-2 text-center">AI가 그림을 분석하고 있습니다</h3>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%; transition: width 0.5s ease-in-out;"></div>
+            </div>
+            <p id="progress-text" class="text-center text-gray-600 mb-6">진행도: 0%</p>
+
             <div class="space-y-4">
                  <div id="step1" class="progress-step pending">
                     <div class="icon">🖼️</div><p>AI 분석 요청</p>
@@ -400,6 +405,11 @@
 
 
     <script>
+        // --- HTTPS Redirection ---
+        if (location.protocol === 'http:' && location.hostname !== 'localhost') {
+            location.replace('https://' + location.host + location.pathname);
+        }
+
         // --- 중요 ---
         // 백엔드 서버를 Vercel에 배포한 후, 발급받은 실제 서버 주소로 이 값을 변경해야 합니다.
         const backendUrl = 'https://artb-backend.vercel.app';
@@ -450,6 +460,9 @@
         const analyzeCorrectedBtn = document.getElementById('analyze-corrected-btn');
         
         const feedbackProgressModal = document.getElementById('feedback-progress-modal');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
         const progressSteps = {
             step1: document.getElementById('step1'),
             step2: document.getElementById('step2'),
@@ -745,13 +758,23 @@
             correctionChoiceModal.classList.add('hidden');
             feedbackProgressModal.classList.remove('hidden');
             
+            // 프로그레스 바 및 스텝 초기화
+            updateProgress(0);
             Object.values(progressSteps).forEach(step => step.className = 'progress-step pending');
             
-            setTimeout(() => updateProgressStep('step1', 'active', 'AI 분석 요청'), 100);
+            setTimeout(() => {
+                updateProgressStep('step1', 'active', 'AI 분석 요청');
+                updateProgress(10);
+            }, 100);
             
             submitForAnalysis(imageBlob);
         }
 
+        function updateProgress(percentage) {
+            progressBar.style.width = `${percentage}%`;
+            progressText.textContent = `진행도: ${percentage}%`;
+        }
+        
         function updateProgressStep(stepId, status, text) {
             const step = progressSteps[stepId];
             if (!step) return;
@@ -762,25 +785,37 @@
 
         async function submitForAnalysis(imageBlob) {
             lastImageBlob = imageBlob;
-            updateProgressStep('step1', 'completed', 'AI 분석 요청 완료');
-            setTimeout(() => updateProgressStep('step2', 'active', '구도 및 형태 평가'), 500);
-
+            
             const formData = new FormData();
             formData.append('image', imageBlob, 'artwork.jpg');
 
             try {
                 const response = await fetch(`${backendUrl}/analyze`, { method: 'POST', body: formData });
                 if (!response.ok) throw new Error(`서버 오류: ${response.statusText}`);
+                
+                updateProgressStep('step1', 'completed', 'AI 분석 요청 완료');
+                updateProgress(25);
+                setTimeout(() => {
+                     updateProgressStep('step2', 'active', '구도 및 형태 평가');
+                     updateProgress(50);
+                }, 500);
 
                 const result = await response.json();
                 
                 updateProgressStep('step2', 'completed', '구도 및 형태 평가 완료');
-                setTimeout(() => updateProgressStep('step3', 'active', '명암 및 채색 평가'), 500);
-                setTimeout(() => updateProgressStep('step3', 'completed', '명암 및 채색 평가 완료'), 1500);
-                setTimeout(() => updateProgressStep('step4', 'active', '최종 피드백 생성'), 2000);
+                setTimeout(() => {
+                    updateProgressStep('step3', 'active', '명암 및 채색 평가');
+                    updateProgress(75);
+                }, 500);
+                setTimeout(() => {
+                    updateProgressStep('step3', 'completed', '명암 및 채색 평가 완료');
+                    updateProgressStep('step4', 'active', '최종 피드백 생성');
+                    updateProgress(90);
+                }, 1000);
                 
                 setTimeout(() => {
                     updateProgressStep('step4', 'completed', '최종 피드백 생성 완료!');
+                    updateProgress(100);
                     setTimeout(() => {
                         feedbackProgressModal.classList.add('hidden');
                         displayResults({
@@ -788,7 +823,7 @@
                             ai_feedback: { feedback_text: result.feedback }
                         });
                     }, 500);
-                }, 2500);
+                }, 1500);
 
             } catch (error) {
                 feedbackProgressModal.classList.add('hidden');
@@ -802,8 +837,8 @@
             const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
             let html = '';
             for (let i = 0; i < sections.length; i += 2) {
-                const title = sections[i].replace(/:/g, ''); // 제목에서 콜론 제거
-                const content = sections[i].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
+                const title = sections[i].replace(/:/g, '');
+                const content = sections[i + 1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
                 html += `<div class="feedback-section mb-4"><h4>${title}</h4><p>${content}</p></div>`;
             }
             return html;
