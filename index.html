@@ -72,17 +72,34 @@
         .progress-step.completed .icon { background-color: #10b981; color: white; }
         
         /* 피드백 서식 스타일 */
-        .feedback-section h4 {
+        .feedback-item {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .feedback-item:last-child {
+            margin-bottom: 0;
+        }
+        .feedback-item h4 {
+            display: flex;
+            align-items: center;
             font-size: 1.1rem;
             font-weight: 600;
-            color: #1e3a8a; /* A darker blue */
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.25rem;
-            border-bottom: 1px solid #ddd;
+            color: #1e3a8a;
+            margin-bottom: 0.75rem;
         }
-        .feedback-section p {
-            color: #4b5563;
-            line-height: 1.75; /* 줄 간격 추가 */
+         .feedback-item h4 svg {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+        .feedback-item p {
+            color: #334155;
+            line-height: 1.75;
+            padding-left: 2rem; /* Indent content under icon */
         }
 
         /* 스크롤 애니메이션 효과 */
@@ -220,7 +237,7 @@
                             <img id="processedImage" class="w-full rounded-lg mb-4 border" alt="보정된 이미지">
                             <div id="ai-feedback" class="info-box">
                                 <p class="font-bold text-sky-800">🤖 AI 1차 피드백</p>
-                                <div id="ai-feedback-text" class="space-y-4"></div>
+                                <div id="ai-feedback-text"></div>
                             </div>
                              <div id="expert-feedback-info" class="info-box bg-emerald-50 border-emerald-400">
                                 <p class="font-bold text-emerald-800">👩‍🏫 전문가 최종 피드백</p>
@@ -234,7 +251,7 @@
                                 </div>
                                 <div id="style-result" class="hidden mt-4 info-box bg-purple-50 border-purple-400">
                                     <p class="font-bold text-purple-800">🎨 AI 스타일 분석</p>
-                                    <div id="style-result-text" class="space-y-4"></div>
+                                    <div id="style-result-text"></div>
                                 </div>
                             </div>
                         </div>
@@ -891,7 +908,7 @@
             let html = '';
             for (let i = 0; i < sections.length; i += 2) {
                 const title = sections[i].replace(/:/g, '');
-                const content = sections[i + 1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
+                const content = sections[i + 1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim().replace(/\n/g, '<br>');
                 html += `<div class="feedback-section mb-4"><h4>${title}</h4><p>${content}</p></div>`;
             }
             return html;
