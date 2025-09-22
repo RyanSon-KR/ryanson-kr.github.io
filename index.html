@@ -16,27 +16,25 @@
         function onOpenCvReady() {
             if (window.cv instanceof Promise) {
                 cv.then(onCvLoaded);
-            } else {
+            } else if (window.cv && window.cv.onRuntimeInitialized) {
                 cv.onRuntimeInitialized = () => {
                     onCvLoaded(window.cv);
                 };
+            } else {
+                 // Fallback for older environments
+                 setTimeout(onOpenCvReady, 50);
             }
         }
 
         // OpenCV가 성공적으로 로드되면 이 함수가 호출됩니다.
+        // 이 함수는 script.js 파일이 로드되기 전에 호출될 수 있으므로,
+        // 실제 기능 활성화는 script.js 내에서 처리합니다.
         function onCvLoaded(cvInstance) {
             window.cv = cvInstance;
             console.log("OpenCV.js is ready.");
             cvLoaded = true;
-            
-            const startCameraButton = document.getElementById('startCameraButton');
-            if (startCameraButton) {
-                startCameraButton.disabled = false;
-                startCameraButton.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    카메라로 촬영
-                `;
-            }
+            // script.js가 로드된 후 실행될 이벤트를 발생시킵니다.
+            document.dispatchEvent(new Event('opencv-ready'));
         }
     </script>
     <!-- OpenCV.js: 실시간 이미지 처리를 위한 라이브러리 -->
