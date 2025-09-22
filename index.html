@@ -6,8 +6,7 @@
     <title>Artb (아트비) - AI와 전문가가 함께하는 새로운 미술 교육</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.8/dist/web/static/pretendard.css">
-    <!-- OpenCV.js: 실시간 이미지 처리를 위한 라이브러리 -->
-    <script async src="https://docs.opencv.org/4.9.0/opencv.js" onload="onOpenCvReady()"></script>
+    <!-- OpenCV는 WebWorker에서 importScripts로 로드하므로 이 페이지에 직접 로드하지 않습니다. -->
     <style>
         body { font-family: 'Pretendard', sans-serif; }
         .hero-gradient { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
@@ -48,7 +47,7 @@
             max-width: 90%;
             width: 600px;
         }
-         .progress-step {
+        .progress-step {
             display: flex;
             align-items: center;
             opacity: 0.5;
@@ -186,49 +185,47 @@
                     <div id="ui-section" class="space-y-4">
                         <button id="startCameraButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition text-lg">카메라로 작품 촬영하기</button>
                         <!-- 모바일 카메라 호출 지원을 위해 capture 속성 포함 -->
-              <button id="uploadImageButton" class="w-full bg-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-800 transition text-lg">이미지 업로드하기</button>
-                </div>
-                <!-- 드롭존: 데스크톱 우선, 모바일은 버튼 사용 권장 -->
+                        <button id="uploadImageButton" class="w-full bg-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-800 transition text-lg">이미지 업로드하기</button>
+                    </div>
+                    <!-- 드롭존: 데스크톱 우선, 모바일은 버튼 사용 권장 -->
                     <div id="dropzone" class="dropzone rounded-lg p-6 text-center text-slate-600">
                         <p class="font-semibold">여기에 이미지를 드래그 앤 드롭하거나, 위의 "이미지 업로드하기" 버튼을 클릭하세요</p>
                         <p class="text-sm mt-1">지원 형식: JPG, PNG, WEBP (HEIC/HEIF는 브라우저 지원 필요)</p>
                     </div>
 
-            <!-- 숨김 파일 입력 (모바일 & 데스크톱 공용) -->
-            <input id="imageFileInput" class="hidden" type="file" accept="image/*" />
+                    <!-- 숨김 파일 입력 (모바일 & 데스크톱 공용) -->
+                    <input id="imageFileInput" class="hidden" type="file" accept="image/*" />
 
-                        
-                        <div id="camera-view" class="hidden relative demo-container rounded-lg">
-                            <video id="videoElement" class="w-full h-full" autoplay playsinline></video>
-                            <canvas id="canvasOverlay"></canvas>
-                            <div class="absolute bottom-4 left-4 right-4 grid grid-cols-1 md:grid-cols-2 gap-2">
-                                <button id="captureButton" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition text-lg">촬영하기</button>
-                                <button id="closeCameraButton" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 transition text-lg">닫기</button>
-                            </div>
+                    <div id="camera-view" class="hidden relative demo-container rounded-lg">
+                        <video id="videoElement" class="w-full h-full" autoplay playsinline></video>
+                        <canvas id="canvasOverlay"></canvas>
+                        <div class="absolute bottom-4 left-4 right-4 grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <button id="captureButton" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition text-lg">촬영하기</button>
+                            <button id="closeCameraButton" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-600 transition text-lg">닫기</button>
                         </div>
-                        <p id="camera-error" class="hidden text-center text-red-500 p-2 bg-red-50 rounded-md"></p>
-                        
-                        <div id="result-section" class="hidden mt-6 p-4 border rounded-lg bg-gray-50">
-                            <h3 class="text-xl font-semibold mb-4">최종 분석 결과</h3>
-                            <img id="processedImage" class="w-full rounded-lg mb-4 border" alt="보정된 이미지">
-                            <div id="ai-feedback" class="info-box">
-                                <p class="font-bold text-sky-800">🤖 AI 1차 피드백</p>
-                                <div id="ai-feedback-text" class="space-y-4"></div>
+                    </div>
+                    <p id="camera-error" class="hidden text-center text-red-500 p-2 bg-red-50 rounded-md"></p>
+                    
+                    <div id="result-section" class="hidden mt-6 p-4 border rounded-lg bg-gray-50">
+                        <h3 class="text-xl font-semibold mb-4">최종 분석 결과</h3>
+                        <img id="processedImage" class="w-full rounded-lg mb-4 border" alt="보정된 이미지">
+                        <div id="ai-feedback" class="info-box">
+                            <p class="font-bold text-sky-800">🤖 AI 1차 피드백</p>
+                            <div id="ai-feedback-text" class="space-y-4"></div>
+                        </div>
+                        <div id="expert-feedback-info" class="info-box bg-emerald-50 border-emerald-400">
+                            <p class="font-bold text-emerald-800">👩‍🏫 전문가 최종 피드백</p>
+                            <p>실제 서비스에서는 24시간 내에 전문가의 깊이 있는 피드백이 이 곳에 표시됩니다!</p>
+                        </div>
+                        <!-- AI Style Analysis Feature -->
+                        <div id="style-analysis-container" class="mt-4">
+                            <button id="styleAnalysisButton" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition text-lg">✨ 내 그림 스타일 분석하기</button>
+                            <div id="style-loading" class="hidden text-center p-4">
+                                <p>AI가 작품의 스타일을 분석 중입니다...</p>
                             </div>
-                             <div id="expert-feedback-info" class="info-box bg-emerald-50 border-emerald-400">
-                                <p class="font-bold text-emerald-800">👩‍🏫 전문가 최종 피드백</p>
-                                <p>실제 서비스에서는 24시간 내에 전문가의 깊이 있는 피드백이 이 곳에 표시됩니다!</p>
-                            </div>
-                            <!-- AI Style Analysis Feature -->
-                            <div id="style-analysis-container" class="mt-4">
-                                <button id="styleAnalysisButton" class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition text-lg">✨ 내 그림 스타일 분석하기</button>
-                                <div id="style-loading" class="hidden text-center p-4">
-                                    <p>AI가 작품의 스타일을 분석 중입니다...</p>
-                                </div>
-                                <div id="style-result" class="hidden mt-4 info-box bg-purple-50 border-purple-400">
-                                    <p class="font-bold text-purple-800">🎨 AI 스타일 분석</p>
-                                    <div id="style-result-text" class="space-y-4"></div>
-                                </div>
+                            <div id="style-result" class="hidden mt-4 info-box bg-purple-50 border-purple-400">
+                                <p class="font-bold text-purple-800">🎨 AI 스타일 분석</p>
+                                <div id="style-result-text" class="space-y-4"></div>
                             </div>
                         </div>
                     </div>
@@ -277,11 +274,11 @@
                                     <input type="checkbox" name="interest" value="expert_feedback" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                     <span class="ml-3 text-gray-700">전문가 1:1 피드백</span>
                                 </label>
-                                 <label class="flex items-center">
+                                <label class="flex items-center">
                                     <input type="checkbox" name="interest" value="local_content" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                     <span class="ml-3 text-gray-700">우리 지역 작가 콘텐츠</span>
                                 </label>
-                                 <label class="flex items-center">
+                                <label class="flex items-center">
                                     <input type="checkbox" name="interest" value="portfolio" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                     <span class="ml-3 text-gray-700">디지털 포트폴리오</span>
                                 </label>
@@ -308,7 +305,7 @@
         <section id="contact" class="py-20 bg-gray-100">
             <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                  <div class="text-center mb-12">
-                    <h2 class="text-3xl font-bold">궁금한 점이 있으신가요?</h2>
+                    <h2 class="text-3화 font-bold">궁금한 점이 있으신가요?</h2>
                     <p class="text-gray-600 mt-2">파트너십 제휴, 투자 문의 등 어떤 내용이든 편하게 연락주세요.</p>
                 </div>
                 <div id="contact-container" class="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
@@ -390,658 +387,557 @@
         <div class="modal-content">
             <h3 class="text-2xl font-bold mb-6 text-center">AI가 그림을 분석하고 있습니다</h3>
             <div class="space-y-4">
-                 <div id="step1" class="progress-step pending">
+                <div id="step1" class="progress-step pending">
                     <div class="icon">🖼️</div><p>AI 분석 요청</p>
                 </div>
                 <div id="step2" class="progress-step pending">
                     <div class="icon">🧠</div><p>구도 및 형태 평가</p>
                 </div>
-                 <div id="step3" class="progress-step pending">
+                <div id="step3" class="progress-step pending">
                     <div class="icon">🎨</div><p>명암 및 채색 평가</p>
                 </div>
-                 <div id="step4" class="progress-step pending">
+                <div id="step4" class="progress-step pending">
                     <div class="icon">✍️</div><p>최종 피드백 생성</p>
                 </div>
             </div>
         </div>
     </div>
 
-
+    <!-- ==== 메인 스크립트 (WebWorker + OpenCV.js 분리, 모바일 우선) ==== -->
     <script>
-        // --- 중요 ---
-        // 백엔드 서버를 Vercel에 배포한 후, 발급받은 실제 서버 주소로 이 값을 변경해야 합니다.
-        const backendUrl = 'https://artb-backend.vercel.app';
-        
-        // --- 전역 변수 및 DOM 요소 ---
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const startCameraButton = document.getElementById('startCameraButton');
-        const cameraView = document.getElementById('camera-view');
-        const videoElement = document.getElementById('videoElement');
-        const canvasOverlay = document.getElementById('canvasOverlay');
-        const captureButton = document.getElementById('captureButton');
-        const closeCameraButton = document.getElementById('closeCameraButton');
-        const resultSection = document.getElementById('result-section');
-        const cameraError = document.getElementById('camera-error');
-        const uploadImageButton = document.getElementById('uploadImageButton');
-        const imageFileInput = document.getElementById('imageFileInput');
-        const dropzone = document.getElementById('dropzone');
-        let stream = null;
-        let lastImageBlob = null;
-        let originalImageBlob = null;
-        let correctedImageBlob = null;
-        let cvLoaded = false;
-        let processVideoTimeout;
+    /* =========================
+       Mobile-first + Worker/OpenCV 분리 적용
+       ========================= */
 
-        function isCvReady() {
-            return cvLoaded && typeof cv !== 'undefined' && typeof cv.Mat === 'function';
-        }
-        function onOpenCvReady() {
-            if (window.cv) {
-                 if (cv instanceof Promise) {
-                    cv.then(onCvLoaded);
-                } else {
-                    cv.onRuntimeInitialized = () => {
-                        onCvLoaded(cv);
-                    };
-                }
-            }
-        }
+    /** ---------- 공용 DOM ---------- **/
+    const backendUrl = 'https://artb-backend.vercel.app';
 
-        function onCvLoaded(cvInstance) {
-            window.cv = cvInstance;
-            console.log("OpenCV.js is ready.");
-            cvLoaded = true;
-        }
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu       = document.getElementById('mobile-menu');
 
-        // --- 모달 관련 DOM 요소 ---
-        const correctionChoiceModal = document.getElementById('correction-choice-modal');
-        const choiceOriginalImageEl = document.getElementById('choice-original-image');
-        const choiceCorrectedImageEl = document.getElementById('choice-corrected-image');
-        const analyzeOriginalBtn = document.getElementById('analyze-original-btn');
-        const analyzeCorrectedBtn = document.getElementById('analyze-corrected-btn');
-        
-        const feedbackProgressModal = document.getElementById('feedback-progress-modal');
-        const progressSteps = {
-            step1: document.getElementById('step1'),
-            step2: document.getElementById('step2'),
-            step3: document.getElementById('step3'),
-            step4: document.getElementById('step4'),
+    const startCameraButton = document.getElementById('startCameraButton');
+    const cameraView        = document.getElementById('camera-view');
+    const videoElement      = document.getElementById('videoElement');
+    const canvasOverlay     = document.getElementById('canvasOverlay');
+    const captureButton     = document.getElementById('captureButton');
+    const closeCameraButton = document.getElementById('closeCameraButton');
+    const cameraError       = document.getElementById('camera-error');
+
+    const uploadImageButton = document.getElementById('uploadImageButton');
+    const imageFileInput    = document.getElementById('imageFileInput');
+    const dropzone          = document.getElementById('dropzone');
+
+    const resultSection     = document.getElementById('result-section');
+    const processedImageEl  = document.getElementById('processedImage');
+
+    const correctionChoiceModal = document.getElementById('correction-choice-modal');
+    const choiceOriginalImageEl = document.getElementById('choice-original-image');
+    the_choiceCorrectedImageEl   = document.getElementById('choice-corrected-image');
+    const analyzeOriginalBtn    = document.getElementById('analyze-original-btn');
+    const analyzeCorrectedBtn   = document.getElementById('analyze-corrected-btn');
+
+    const feedbackProgressModal = document.getElementById('feedback-progress-modal');
+    const progressSteps = {
+      step1: document.getElementById('step1'),
+      step2: document.getElementById('step2'),
+      step3: document.getElementById('step3'),
+      step4: document.getElementById('step4'),
+    };
+
+    const styleAnalysisButton = document.getElementById('styleAnalysisButton');
+    const styleLoading        = document.getElementById('style-loading');
+    const styleResult         = document.getElementById('style-result');
+    const styleResultText     = document.getElementById('style-result-text');
+
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+    /** ---------- 상태 ---------- **/
+    let stream = null;
+    let lastPreviewBitmap = null;     // 오버레이 그릴 때 쓰는 현재 프리뷰
+    let lastFullBitmap    = null;     // 워커 보정용 원본 프레임
+    let lastDetected      = null;     // { corners: [[x,y]...], viewW, viewH, fullW, fullH }
+    let lastImageBlob     = null;     // 분석에 실제 보낸 이미지 blob (원본/보정본 중 사용자가 선택한 것)
+    let originalImageBlob = null;     // 모달 표시용
+    let correctedImageBlob= null;     // 모달 표시용
+    let previewSendPending = false;   // 프리뷰 비트맵 전송 중인 경우 중복 전송 제한
+
+    /** ---------- 워커 초기화 ---------- **/
+    const workerURL = URL.createObjectURL(new Blob([WORKER_SRC()], { type: 'application/javascript' }));
+    const cvWorker = new Worker(workerURL);
+    cvWorker.onmessage = (ev) => {
+      const m = ev.data;
+      if (m.type === 'status') {
+        if (m.level === 'error') showError(m.text);
+      } else if (m.type === 'detected') {
+        // 감지 결과(코너/스케일) 수신 → 오버레이 그리기
+        lastDetected = m;
+        drawOverlayFromDetection(m);
+      } else if (m.type === 'correctedBlob') {
+        // 보정본 결과 수신 → 모달 썸네일/분석용으로 사용
+        correctedImageBlob = m.blob;
+        const url = URL.createObjectURL(correctedImageBlob);
+        choiceCorrectedImageEl.src = url;
+        // 오리지널이 준비되어 있으면 모달 노출
+        if (choiceOriginalImageEl.src) {
+          correctionChoiceModal.classList.remove('hidden');
+        }
+      }
+    };
+
+    /** ---------- 모바일 메뉴 ---------- **/
+    mobileMenuButton?.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+    document.querySelectorAll('.mobile-menu-link')?.forEach(el => {
+      el.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+    });
+
+    /** ---------- 유틸 ---------- **/
+    function showError(msg) {
+      cameraError.textContent = msg;
+      cameraError.classList.remove('hidden');
+    }
+    function hideError() { cameraError.classList.add('hidden'); }
+    function isMobile() { return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+
+    function fitWithin(w,h,mw,mh){ const s=Math.min(mw/w, mh/h); return {w:Math.round(w*s), h:Math.round(h*s)}; }
+
+    function drawOverlayFromDetection(det) {
+      // det: { corners: [[x,y]...], viewW, viewH }
+      const ctx = canvasOverlay.getContext('2d');
+      ctx.clearRect(0,0,canvasOverlay.width, canvasOverlay.height);
+      if (!det?.corners || det.corners.length < 3) return;
+
+      // 캔버스 리사이즈 (video나 업로드 프리뷰 박스 크기에 맞춤)
+      const vw = det.viewW, vh = det.viewH;
+      if (canvasOverlay.width !== vw || canvasOverlay.height !== vh) {
+        canvasOverlay.width = vw; canvasOverlay.height = vh;
+      }
+      const poly = det.corners;
+
+      // 50% 오버레이 + 굵은 선/점(모바일 핫존)
+      ctx.fillStyle = 'rgba(22,163,74,0.45)';
+      ctx.beginPath();
+      ctx.moveTo(poly[0][0], poly[0][1]);
+      for (let i=1;i<poly.length;i++) ctx.lineTo(poly[i][0], poly[i][1]);
+      ctx.closePath(); ctx.fill();
+
+      ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 3*dpr;
+      ctx.beginPath();
+      ctx.moveTo(poly[0][0], poly[0][1]);
+      for (let i=1;i<poly.length;i++) ctx.lineTo(poly[i][0], poly[i][1]);
+      ctx.closePath(); ctx.stroke();
+
+      ctx.fillStyle = '#ff3333';
+      for (const [x,y] of poly) { ctx.beginPath(); ctx.arc(x,y, 8*dpr, 0, Math.PI*2); ctx.fill(); }
+    }
+
+    /** ---------- 업로드 흐름 ---------- **/
+    uploadImageButton.addEventListener('click', () => {
+      imageFileInput?.removeAttribute('capture');  // 모바일에서도 갤러리로
+      imageFileInput?.click();
+    });
+    imageFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      imageFileInput.value = '';
+      if (!file) return;
+      hideError();
+      resultSection.classList.add('hidden');
+
+      // 원본 이미지 비트맵/Blob 준비
+      let fullBM = null;
+      try {
+        fullBM = await toImageBitmap(file);
+      } catch {
+        showError('이미지를 불러오는 중 오류가 발생했습니다.');
+        return;
+      }
+      originalImageBlob = file;
+
+      // 프리뷰 캔버스 영역 크기 계산 (컨테이너 폭 기준 1280x720 내)
+      const fit = fitWithin(fullBM.width, fullBM.height, 1280, 720);
+      // 워커로 "정적 이미지 감지" 요청
+      cvWorker.postMessage({ type: 'sourceStill', full: fullBM, viewW: fit.w, viewH: fit.h }, [fullBM]);
+
+      // 모달의 원본 썸네일
+      const origURL = URL.createObjectURL(file);
+      choiceOriginalImageEl.src = origURL;
+
+      // 감지 되면 워커가 자동으로 보정본 Blob도 보내준다(correctedBlob)
+      // → correctedImageBlob 세팅 + 모달 오픈
+    });
+
+    /** ---------- 카메라 흐름 ---------- **/
+    startCameraButton.addEventListener('click', async () => {
+      hideError();
+      resultSection.classList.add('hidden');
+
+      try {
+        if (location.protocol !== 'https:' || !navigator.mediaDevices) {
+          throw new Error('카메라는 HTTPS 페이지에서만 사용할 수 있습니다.');
+        }
+        if (stream) stream.getTracks().forEach(t => t.stop());
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+
+        cameraView.classList.remove('hidden');
+        startCameraButton.textContent = '카메라 재시작';
+        videoElement.srcObject = stream;
+        videoElement.onloadedmetadata = () => {
+          // 비디오 프리뷰 크기를 기준으로 오버레이 동기화
+          syncOverlayToVideo();
+          // 워커에 프레임 전송 루프 시작
+          startVideoLoop();
         };
-
-        // --- 모바일 메뉴 ---
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-        document.querySelectorAll('.mobile-menu-link').forEach(link => {
-            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
-        });
-        
-        // 화면 리사이즈 시 오버레이 동기화
-        function resizeOverlayToVideo() {
-          if (!videoElement.videoWidth) return;
-          const r = videoElement.getBoundingClientRect();
-          canvasOverlay.width = r.width; canvasOverlay.height = r.height;
+      } catch (err) {
+        console.error(err);
+        showError(err.message || '카메라 권한을 확인하세요.');
+        cameraView.classList.add('hidden');
+        if (isMobile()) {
+          // 모바일 폴백: 네이티브 카메라(촬영 후 파일 반환)
+          imageFileInput.setAttribute('capture', 'environment');
+          imageFileInput.click();
+          setTimeout(() => imageFileInput.removeAttribute('capture'), 0);
         }
-        window.addEventListener('resize', resizeOverlayToVideo);
-        
-        const isMobileDevice = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-        function triggerNativeCameraFallback() {
-            if (!imageFileInput) return;
-            imageFileInput.setAttribute('capture', 'environment');
-            imageFileInput.click();
-            setTimeout(() => imageFileInput.removeAttribute('capture'), 0);
-        }
-
- 
-        // 업로드 버튼/드롭존 (모바일/데스크톱)
-        uploadImageButton.addEventListener('click', () => {
-          imageFileInput?.removeAttribute('capture');
-          imageFileInput?.click();
-        });
-        imageFileInput.addEventListener('change', async (e) => {
-          const file = e.target.files?.[0];
-          if (file) await handleImageFile(file);
-          imageFileInput.value = '';
-        });
-        ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); }));
-        ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); }));
-        dropzone.addEventListener('drop', async (e) => {
-          const file = e.dataTransfer?.files?.[0];
-          if (file) await handleImageFile(file);
-        });
-
-        async function handleImageFile(file) {
-          cameraError.classList.add('hidden');
-          resultSection.classList.add('hidden');
-          if (!isCvReady()) {
-            cameraError.textContent = 'OpenCV 로딩 중입니다. 잠시 후 다시 시도하세요.';
-            cameraError.classList.remove('hidden');
-            return;
-          }
-          if (!file.type.startsWith('image/')) {
-            cameraError.textContent = '이미지 파일만 업로드할 수 있습니다.';
-            cameraError.classList.remove('hidden');
-            return;
-          }
-          try {
-            const srcCanvas = await readFileToCanvas(file);
-            const resized = resizeCanvasMax(srcCanvas, 1600);
-            const corners = findLargestQuad(resized);
-            await showCorrectionChoice(resized, corners, { source: 'upload' }); // 업로드 경로: 좌표계 일치
-          } catch (err) {
-            console.error(err);
-            cameraError.textContent = '이미지를 불러오는 중 오류가 발생했습니다.';
-            cameraError.classList.remove('hidden');
-          }
-        }
-
-        // 파일을 Canvas로 읽기 (모바일/데스크톱 호환): createImageBitmap → <img>+FileReader fallback
-        async function readFileToCanvas(file) {
-          let imgBitmap = null;
-          if ('createImageBitmap' in window) {
-            try { imgBitmap = await createImageBitmap(file); } catch {}
-          }
-          if (!imgBitmap) {
-        // iOS Safari HEIC 등 대응: FileReader로 dataURL 생성 후 Image 로딩
-        const dataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject; reader.readAsDataURL(file);
-        });
-        imgBitmap = await new Promise((resolve, reject) => {
-          const im = new Image();
-          im.onload = () => resolve(im);
-          im.onerror = reject; im.src = dataUrl;
-        });
       }
-      const canvas = document.createElement('canvas');
-      canvas.width = imgBitmap.width; canvas.height = imgBitmap.height;
-      canvas.getContext('2d').drawImage(imgBitmap, 0, 0);
-      return canvas;
+    });
+
+    function syncOverlayToVideo() {
+      const r = videoElement.getBoundingClientRect();
+      canvasOverlay.width  = Math.round(r.width);
+      canvasOverlay.height = Math.round(r.height);
+    }
+    window.addEventListener('resize', syncOverlayToVideo);
+
+    async function startVideoLoop() {
+      if (!stream?.active) return;
+      try {
+        const vw = videoElement.videoWidth, vh = videoElement.videoHeight;
+        if (!vw || !vh) { requestAnimationFrame(startVideoLoop); return; }
+        const fit = fitWithin(vw, vh, 1280, 720);
+
+        // 프리뷰 캔버스 → 비트맵
+        const prevCanvas = document.createElement('canvas');
+        prevCanvas.width = fit.w; prevCanvas.height = fit.h;
+        prevCanvas.getContext('2d').drawImage(videoElement, 0, 0, fit.w, fit.h);
+        const previewBM = await createImageBitmap(prevCanvas);
+
+        // 풀 프레임 비트맵
+        const fullBM = await createImageBitmap(videoElement);
+
+        lastPreviewBitmap = previewBM;
+        lastFullBitmap    = fullBM;
+
+        if (!previewSendPending) {
+          previewSendPending = true;
+          cvWorker.postMessage({ type: 'sourceFrame', preview: previewBM, full: fullBM, viewW: fit.w, viewH: fit.h, fullW: vw, fullH: vh }, [previewBM, fullBM]);
+          previewSendPending = false;
+        }
+      } catch (e) {
+        console.warn('preview send skipped:', e);
+      }
+      requestAnimationFrame(startVideoLoop);
     }
 
-    function resizeCanvasMax(srcCanvas, maxSide = 1600) {
-      const { width, height } = srcCanvas;
-      const scale = Math.min(1, maxSide / Math.max(width, height));
-      if (scale === 1) return srcCanvas;
-      const dst = document.createElement('canvas');
-      dst.width = Math.round(width * scale); dst.height = Math.round(height * scale);
-      dst.getContext('2d').drawImage(srcCanvas, 0, 0, dst.width, dst.height);
-      return dst;
+    captureButton.addEventListener('click', async () => {
+      // 현재 프레임의 원본을 Blob으로
+      if (!lastFullBitmap) return;
+      const snapCanvas = document.createElement('canvas');
+      snapCanvas.width = lastFullBitmap.width; snapCanvas.height = lastFullBitmap.height;
+      const ctx = snapCanvas.getContext('2d');
+      ctx.drawImage(lastFullBitmap, 0, 0);
+      originalImageBlob = await snapCanvas.convertToBlob({ type:'image/jpeg', quality:0.92 });
+
+      // 감지된 코너로 워커에 “지금 보정해줘” 요청
+      cvWorker.postMessage({ type:'rectifyNow' });
+
+      // 원본 썸네일 준비 및 모달 오픈 준비
+      choiceOriginalImageEl.src = URL.createObjectURL(originalImageBlob);
+      // correctedImageBlob은 워커에서 오면(choiceCorrectedImageEl.src 세팅) 모달 오픈
+    });
+
+    closeCameraButton.addEventListener('click', () => {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      cameraView.classList.add('hidden');
+      cameraError.classList.add('hidden');
+      startCameraButton.textContent = '카메라로 작품 촬영하기';
+    });
+
+    /** ---------- 보정 선택 모달 → 분석 ---------- **/
+    analyzeOriginalBtn.addEventListener('click', () => startAiAnalysis(originalImageBlob));
+    analyzeCorrectedBtn.addEventListener('click', () => startAiAnalysis(correctedImageBlob));
+
+    function updateProgressStep(stepId, status, text) {
+      const step = progressSteps[stepId]; if (!step) return;
+      step.className = 'progress-step ' + status;
+      step.querySelector('p').textContent = text;
     }
-    
-    function findLargestQuad(srcCanvas) {
-      if (!isCvReady() || !srcCanvas) return null;
-
-      const src = cv.imread(srcCanvas);
-      const gray = new cv.Mat();
-      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-      cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-      const edges = new cv.Mat();
-      cv.Canny(gray, edges, 50, 150);
-
-      const contours = new cv.MatVector();
-      const hierarchy = new cv.Mat();
-      cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
-
-      let bestContour = null;
-      let maxArea = 0;
-      const minArea = (srcCanvas.width * srcCanvas.height) / 10;
-
-      for (let i = 0; i < contours.size(); ++i) {
-        const cnt = contours.get(i);
-        const area = cv.contourArea(cnt);
-        if (area > minArea) {
-          const peri = cv.arcLength(cnt, true);
-          const approx = new cv.Mat();
-          cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
-          if (approx.rows === 4 && area > maxArea) {
-            maxArea = area;
-            if (bestContour) bestContour.delete();
-            bestContour = approx.clone();
-          }
-          approx.delete();
-        }
-        cnt.delete();
-      }
-
-      let points = null;
-      if (bestContour) {
-        points = [];
-        for (let i = 0; i < 4; i++) {
-          points.push({
-            x: bestContour.data32S[i * 2],
-            y: bestContour.data32S[i * 2 + 1],
-          });
-        }
-        bestContour.delete();
-      }
-
-      src.delete();
-      gray.delete();
-      edges.delete();
-      contours.delete();
-      hierarchy.delete();
-
-      return points;
+    async function startAiAnalysis(imageBlob) {
+      correctionChoiceModal.classList.add('hidden');
+      feedbackProgressModal.classList.remove('hidden');
+      Object.values(progressSteps).forEach(step => step.className = 'progress-step pending');
+      setTimeout(() => updateProgressStep('step1','active','AI 분석 요청'), 80);
+      submitForAnalysis(imageBlob);
     }
-        // --- 카메라 및 OpenCV 로직 ---
-        startCameraButton.addEventListener('click', async () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            clearTimeout(processVideoTimeout);
-            cameraError.classList.add('hidden');
-            resultSection.classList.add('hidden');
-            
-            if (!cvLoaded) {
-                cameraError.textContent = "카메라 기능을 로드 중입니다. 잠시 후 다시 시도해주세요.";
-                cameraError.classList.remove('hidden');
-                return;
-            }
 
-            try {
-                if (location.protocol !== 'https:' || !navigator.mediaDevices) {
-                    throw new Error('카메라는 보안 연결(HTTPS)된 페이지에서만 사용할 수 있습니다.');
-                }
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
-                });
-                cameraView.classList.remove('hidden');
-                startCameraButton.textContent = '카메라 재시작';
-                videoElement.srcObject = stream;
-                videoElement.onloadedmetadata = () => {
-                    resizeCanvas();
-                    processVideo(); 
-                };
-            } catch (err) {
-                console.error("카메라 접근 오류:", err);
-                cameraError.textContent = err.message || "카메라에 접근할 수 없습니다. 브라우저의 카메라 권한을 확인해주세요.";
-                cameraError.classList.remove('hidden');
-                cameraView.classList.add('hidden');
-                if (isMobileDevice()) {
-                    triggerNativeCameraFallback();
-                }
-            }
-        });
+    async function submitForAnalysis(imageBlob) {
+      lastImageBlob = imageBlob;
+      updateProgressStep('step1','completed','AI 분석 요청 완료');
+      setTimeout(() => updateProgressStep('step2','active','구도 및 형태 평가'), 150);
 
-        function resizeCanvas() {
-            if (!videoElement.videoWidth) return;
-            const videoRect = videoElement.getBoundingClientRect();
-            canvasOverlay.width = videoRect.width;
-            canvasOverlay.height = videoRect.height;
-        }
+      const formData = new FormData();
+      formData.append('image', imageBlob, 'artwork.jpg');
 
-        window.addEventListener('resize', resizeCanvas);
+      try {
+        const res = await fetch(\`\${backendUrl}/analyze\`, { method:'POST', body: formData });
+        if (!res.ok) throw new Error(\`서버 오류: \${res.statusText}\`);
+        const result = await res.json();
 
-        let lastDetectedCorners = null;
+        updateProgressStep('step2','completed','구도 및 형태 평가 완료');
+        setTimeout(()=>updateProgressStep('step3','active','명암 및 채색 평가'), 300);
+        setTimeout(()=>updateProgressStep('step3','completed','명암 및 채색 평가 완료'), 900);
+        setTimeout(()=>updateProgressStep('step4','active','최종 피드백 생성'), 1200);
 
-        function processVideo() {
-            if (!stream?.active || !cvLoaded) return;
-            
-            const videoWidth = videoElement.videoWidth;
-            const videoHeight = videoElement.videoHeight;
-            if (videoWidth === 0 || videoHeight === 0) {
-                 processVideoTimeout = setTimeout(processVideo, 100);
-                 return;
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = videoWidth;
-            canvas.height = videoHeight;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            ctx.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
-
-            let src = cv.imread(canvas);
-            let gray = new cv.Mat();
-            cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-            cv.GaussianBlur(gray, gray, new cv.Size(5, 5), 0, 0, cv.BORDER_DEFAULT);
-            let edges = new cv.Mat();
-            cv.Canny(gray, edges, 50, 150);
-
-            let contours = new cv.MatVector();
-            let hierarchy = new cv.Mat();
-            cv.findContours(edges, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
-
-            let maxArea = 0;
-            let bestContour = null;
-            const minArea = (videoWidth * videoHeight) / 10;
-
-            for (let i = 0; i < contours.size(); ++i) {
-                let cnt = contours.get(i);
-                let area = cv.contourArea(cnt);
-                if (area > minArea) {
-                    let peri = cv.arcLength(cnt, true);
-                    let approx = new cv.Mat();
-                    cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
-                    if (approx.rows === 4) {
-                        if (area > maxArea) {
-                            maxArea = area;
-                            bestContour = approx.clone();
-                        }
-                    }
-                    approx.delete();
-                }
-                cnt.delete();
-            }
-
-            const overlayCtx = canvasOverlay.getContext('2d');
-            overlayCtx.clearRect(0, 0, canvasOverlay.width, canvasOverlay.height);
-
-            if (bestContour) {
-                const points = [];
-                for(let i=0; i<4; i++){
-                    points.push({
-                        x: bestContour.data32S[i * 2] * (canvasOverlay.width / videoWidth),
-                        y: bestContour.data32S[i * 2 + 1] * (canvasOverlay.height / videoHeight)
-                    });
-                }
-                lastDetectedCorners = points; 
-
-                overlayCtx.beginPath();
-                overlayCtx.moveTo(points[0].x, points[0].y);
-                for (let i = 1; i < 4; i++) {
-                    overlayCtx.lineTo(points[i].x, points[i].y);
-                }
-                overlayCtx.closePath();
-                overlayCtx.strokeStyle = 'rgba(74, 222, 128, 0.9)';
-                overlayCtx.lineWidth = 4;
-                overlayCtx.stroke();
-                
-                bestContour.delete();
-            } else {
-                 lastDetectedCorners = null;
-            }
-            
-            src.delete(); gray.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-            
-            processVideoTimeout = setTimeout(processVideo, 50); 
-        }
-
-        captureButton.addEventListener('click', () => {
-            clearTimeout(processVideoTimeout);
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            const context = canvas.getContext('2d');
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-            
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            cameraView.classList.add('hidden');
-            
-            showCorrectionChoice(canvas, lastDetectedCorners, { source: 'camera' });
-        });
-
-        closeCameraButton.addEventListener('click', () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            clearTimeout(processVideoTimeout);
-            cameraView.classList.add('hidden');
-            cameraError.classList.add('hidden');
-            startCameraButton.textContent = '카메라로 작품 촬영하기';
-        });
-        
-        function showCorrectionChoice(originalCanvas, corners, options = {}) {
-            correctedImageBlob = null;
-            return new Promise(resolve => {
-                originalCanvas.toBlob(blob => {
-                    if (!blob) {
-                        cameraError.textContent = '이미지를 처리할 수 없습니다. 다시 시도해주세요.';
-                        cameraError.classList.remove('hidden');
-                        resolve();
-                        return;
-                    }
-
-                    originalImageBlob = blob;
-                    if (!corners || corners.length !== 4) {
-                        console.log("자동 보정 실패, 원본 이미지로 분석을 시작합니다.");
-                        startAiAnalysis(originalImageBlob);
-                        resolve();
-                        return;
-                    }
-
-                    choiceOriginalImageEl.src = originalCanvas.toDataURL('image/jpeg');
-
-                    const useOverlayScaling = options.source !== 'upload' && canvasOverlay.width && canvasOverlay.height;
-                    const scaleX = useOverlayScaling ? originalCanvas.width / canvasOverlay.width : 1;
-                    const scaleY = useOverlayScaling ? originalCanvas.height / canvasOverlay.height : 1;
-
-                    const normalizedCorners = corners.map(point => ({
-                        x: point.x * scaleX,
-                        y: point.y * scaleY,
-                    }));
-
-                    const sortedByY = [...normalizedCorners].sort((a, b) => a.y - b.y);
-                    const topPoints = [sortedByY[0], sortedByY[1]].sort((a, b) => a.x - b.x);
-                    const bottomPoints = [sortedByY[2], sortedByY[3]].sort((a, b) => a.x - b.x);
-                    const sortedCorners = [...topPoints, ...bottomPoints];
-
-                    let src = null;
-                    let dst = null;
-                    let M = null;
-                    let srcTri = null;
-                    let dstTri = null;
-
-                    try {
-                        src = cv.imread(originalCanvas);
-                        const dsize = new cv.Size(originalCanvas.width, originalCanvas.height);
-                        srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                            sortedCorners[0].x, sortedCorners[0].y,
-                            sortedCorners[1].x, sortedCorners[1].y,
-                            sortedCorners[2].x, sortedCorners[2].y,
-                            sortedCorners[3].x, sortedCorners[3].y,
-                        ]);
-                        dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, dsize.width, 0, dsize.width, dsize.height, 0, dsize.height]);
-                        M = cv.getPerspectiveTransform(srcTri, dstTri);
-                        dst = new cv.Mat();
-                        cv.warpPerspective(src, dst, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar());
-
-                        const correctedCanvas = document.createElement('canvas');
-                        cv.imshow(correctedCanvas, dst);
-                        choiceCorrectedImageEl.src = correctedCanvas.toDataURL('image/jpeg');
-                        correctedCanvas.toBlob(blob => { correctedImageBlob = blob; }, 'image/jpeg');
-
-                        correctionChoiceModal.classList.remove('hidden');
-                    } catch (error) {
-                        console.error('이미지 보정 중 오류 발생:', error);
-                        startAiAnalysis(originalImageBlob);
-                    } finally {
-                        if (src) src.delete();
-                        if (dst) dst.delete();
-                        if (M) M.delete();
-                        if (srcTri) srcTri.delete();
-                        if (dstTri) dstTri.delete();
-                        resolve();
-                    }
-                }, 'image/jpeg');
+        setTimeout(() => {
+          updateProgressStep('step4','completed','최종 피드백 생성 완료!');
+          setTimeout(() => {
+            feedbackProgressModal.classList.add('hidden');
+            displayResults({
+              processed_image_url: URL.createObjectURL(imageBlob),
+              ai_feedback: { feedback_text: result.feedback }
             });
+          }, 300);
+        }, 1600);
+      } catch (err) {
+        feedbackProgressModal.classList.add('hidden');
+        console.error(err);
+        showError('AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      }
+    }
+
+    function formatFeedbackToHtml(text) {
+      const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
+      let html = '';
+      for (let i = 0; i < sections.length; i += 2) {
+        const title = sections[i].replace(/:/g,'');
+        const content = sections[i+1].replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').trim();
+        html += \`<div class="feedback-section mb-4"><h4>\${title}</h4><p>\${content}</p></div>\`;
+      }
+      return html;
+    }
+    function displayResults(data) {
+      resultSection.classList.remove('hidden');
+      processedImageEl.src = data.processed_image_url;
+      document.getElementById('ai-feedback-text').innerHTML = formatFeedbackToHtml(data.ai_feedback.feedback_text);
+      document.getElementById('style-analysis-container').classList.remove('hidden');
+      document.getElementById('style-result').classList.add('hidden');
+    }
+
+    /** ---------- 드롭존 / 설문 / 문의 / 사전등록: 기존 로직 유지 ---------- **/
+    ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover'); }));
+    dropzone.addEventListener('drop', async (e) => {
+      const file = e.dataTransfer?.files?.[0]; if (file) {
+        imageFileInput.files = e.dataTransfer.files; // 재사용
+        const ev = new Event('change'); imageFileInput.dispatchEvent(ev);
+      }
+    });
+
+    const surveyForm = document.getElementById('artb-survey-form');
+    const surveyContainer = document.getElementById('survey-container');
+    const surveyThanks = document.getElementById('survey-thanks');
+    if (surveyForm) {
+      surveyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(surveyForm);
+        const data = { role: fd.get('role'), interests: fd.getAll('interest'), feedback_text: fd.get('feedback_text') };
+        try {
+          const res = await fetch(\`\${backendUrl}/survey\`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+          if (!res.ok) throw new Error('서버에 문제가 발생했습니다.');
+          surveyContainer.classList.add('hidden'); surveyThanks.classList.remove('hidden');
+        } catch (err) { console.error(err); alert('설문 제출에 실패했습니다. 잠시 후 다시 시도해주세요.'); }
+      });
+    }
+
+    const contactForm = document.getElementById('contact-form');
+    const contactContainer = document.getElementById('contact-container');
+    const contactThanks = document.getElementById('contact-thanks');
+    if (contactForm) {
+      contactForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(contactForm);
+        const data = Object.fromEntries(fd.entries());
+        try {
+          const res = await fetch(\`\${backendUrl}/contact\`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+          if (!res.ok) throw new Error('문의 제출에 실패했습니다.');
+          contactContainer.classList.add('hidden'); contactThanks.classList.remove('hidden');
+        } catch (err) { console.error(err); alert(err.message); }
+      });
+    }
+
+    const preregisterForm = document.getElementById('preregister-form');
+    const ctaContainer = document.getElementById('cta-container');
+    const ctaThanks = document.getElementById('cta-thanks');
+    if (preregisterForm) {
+      preregisterForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(preregisterForm);
+        const data = Object.fromEntries(fd.entries());
+        try {
+          const res = await fetch(\`\${backendUrl}/preregister\`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+          if (!res.ok) throw new Error('사전 등록에 실패했습니다.');
+          ctaContainer.classList.add('hidden'); ctaThanks.classList.remove('hidden');
+        } catch (err) { console.error(err); alert(err.message); }
+      });
+    }
+
+    /** ---------- 보조 유틸 ---------- **/
+    async function toImageBitmap(fileOrCanvasOrVideo) {
+      if (fileOrCanvasOrVideo instanceof Blob) {
+        return await createImageBitmap(fileOrCanvasOrVideo);
+      }
+      return await createImageBitmap(fileOrCanvasOrVideo);
+    }
+
+    /** ---------- 워커 소스 (OpenCV.js 로드 & 처리 전담) ---------- **/
+    function WORKER_SRC(){ return \`
+let cvReady = false;
+let lastPreview = null; // ImageBitmap(축소)
+let lastFull    = null; // ImageBitmap(원본)
+let viewW=0, viewH=0, fullW=0, fullH=0;
+let lastCorners = null;
+
+// OpenCV.js 로드
+self.importScripts('https://docs.opencv.org/4.x/opencv.js');
+cv['onRuntimeInitialized'] = ()=>{ cvReady = true; postStatus('ok','OpenCV ready'); };
+
+function postStatus(level,text){ self.postMessage({type:'status', level, text}); }
+function postDetected(corners){ self.postMessage({type:'detected', corners, viewW, viewH, fullW, fullH}); }
+
+self.onmessage = async (ev)=>{
+  const m = ev.data;
+  if (m.type === 'sourceStill') {
+    // 업로드 정지 이미지
+    lastFull = m.full; viewW = m.viewW; viewH = m.viewH; fullW = m.full.width; fullH = m.full.height;
+    // 미리보기 생성
+    const prev = new OffscreenCanvas(viewW, viewH);
+    prev.getContext('2d').drawImage(lastFull, 0,0, viewW, viewH);
+    lastPreview = prev.transferToImageBitmap();
+
+    await detectOnPreview();
+    // 감지 성공 시 바로 보정본까지 만들어 Blob으로 전달(모달에서 즉시 비교 가능)
+    if (lastCorners && lastCorners.length===4) {
+      const blob = await rectifyToBlob(lastCorners);
+      self.postMessage({ type:'correctedBlob', blob });
+    }
+  } else if (m.type === 'sourceFrame') {
+    // 카메라 프레임
+    lastPreview = m.preview; lastFull = m.full;
+    viewW = m.viewW; viewH = m.viewH; fullW = m.fullW || m.full.width; fullH = m.fullH || m.full.height;
+    await detectOnPreview();
+  } else if (m.type === 'rectifyNow') {
+    if (!lastCorners || !lastFull) return;
+    const blob = await rectifyToBlob(lastCorners);
+    self.postMessage({ type:'correctedBlob', blob });
+  }
+};
+
+async function detectOnPreview(){
+  if (!cvReady || !lastPreview) return;
+  try{
+    const c = new OffscreenCanvas(viewW, viewH);
+    const cx = c.getContext('2d');
+    cx.drawImage(lastPreview, 0,0, viewW, viewH);
+    const mat = cv.imread(c);
+    let gray=new cv.Mat(); cv.cvtColor(mat, gray, cv.COLOR_RGBA2GRAY);
+    let blur=new cv.Mat(); cv.GaussianBlur(gray, blur, new cv.Size(5,5), 0);
+    let edges=new cv.Mat(); cv.Canny(blur, edges, 60, 180);
+    let contours=new cv.MatVector(), hier=new cv.Mat();
+    cv.findContours(edges, contours, hier, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+    let best=null, bestArea=0, minArea=(viewW*viewH)/10;
+    for(let i=0;i<contours.size();i++){
+      let cnt=contours.get(i); let area=cv.contourArea(cnt);
+      if(area>minArea){
+        let peri=cv.arcLength(cnt,true);
+        let approx=new cv.Mat(); cv.approxPolyDP(cnt, approx, 0.02*peri, true);
+        if(approx.rows===4 && cv.isContourConvex(approx)){
+          if(area>bestArea){ bestArea=area; if(best) best.delete(); best=approx.clone(); }
         }
+        approx.delete(); cnt.delete();
+      }else{ cnt.delete(); }
+    }
+    let corners=null;
+    if(best){
+      corners=[];
+      for(let i=0;i<4;i++){ corners.push([best.intPtr(i,0)[0], best.intPtr(i,0)[1]]); }
+      corners = orderCW(corners);
+      best.delete();
+    }
+    gray.delete(); blur.delete(); edges.delete(); contours.delete(); hier.delete(); mat.delete();
 
-        analyzeOriginalBtn.addEventListener('click', () => startAiAnalysis(originalImageBlob));
-        analyzeCorrectedBtn.addEventListener('click', () => startAiAnalysis(correctedImageBlob));
+    lastCorners = corners;
+    if(corners) postDetected(corners);
+    else postDetected([]); // 오버레이 초기화
+  }catch(e){
+    postStatus('error','detect failed: '+e.message);
+  }
+}
 
-        async function startAiAnalysis(imageBlob) {
-            correctionChoiceModal.classList.add('hidden');
-            feedbackProgressModal.classList.remove('hidden');
-            
-            Object.values(progressSteps).forEach(step => step.className = 'progress-step pending');
-            
-            setTimeout(() => updateProgressStep('step1', 'active', 'AI 분석 요청'), 100);
-            
-            submitForAnalysis(imageBlob);
-        }
+function orderCW(pts){
+  const c=pts.reduce((a,[x,y])=>[a[0]+x,a[1]+y],[0,0]).map(v=>v/pts.length);
+  const arr=pts.map(p=>({p,ang:Math.atan2(p[1]-c[1], p[0]-c[0])})).sort((a,b)=>a.ang-b.ang).map(o=>o.p);
+  // CCW이면 뒤집어서 CW
+  const area = signedArea(arr);
+  return (area>0) ? arr.reverse() : arr;
+}
+function signedArea(poly){
+  let s=0; for(let i=0;i<poly.length;i++){
+    const [x1,y1]=poly[i], [x2,y2]=poly[(i+1)%poly.length]; s += (x1*y2 - x2*y1);
+  } return 0.5*s;
+}
 
-        function updateProgressStep(stepId, status, text) {
-            const step = progressSteps[stepId];
-            if (!step) return;
-            step.className = 'progress-step';
-            step.classList.add(status);
-            step.querySelector('p').textContent = text;
-        }
+// preview 코너 → full 좌표로 스케일 후 호모그래피, Blob 반환
+async function rectifyToBlob(cornersPreview){
+  // 스케일 업: preview → full
+  const sx = (lastFull.width  || fullW) / viewW;
+  const sy = (lastFull.height || fullH) / viewH;
+  const q = cornersPreview.map(([x,y])=> [x*sx, y*sy]);
 
-        async function submitForAnalysis(imageBlob) {
-            lastImageBlob = imageBlob;
-            updateProgressStep('step1', 'completed', 'AI 분석 요청 완료');
-            setTimeout(() => updateProgressStep('step2', 'active', '구도 및 형태 평가'), 500);
+  // 목적지 크기: 원본 종횡비 유지(가로/세로 판정)
+  const bbox = (()=>{ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+    for(const [x,y] of q){ if(x<minx)minx=x; if(y<miny)miny=y; if(x>maxx)maxx=x; if(y>maxy)maxy=y; }
+    return {w:maxx-minx, h:maxy-miny};
+  })();
+  let targetW, targetH;
+  if (bbox.w >= bbox.h){ targetW = 1000; targetH = Math.round(1000*(bbox.h/(bbox.w||1))); }
+  else { targetH = 1000; targetW = Math.round(1000*(bbox.w/(bbox.h||1))); }
 
-            const formData = new FormData();
-            formData.append('image', imageBlob, 'artwork.jpg');
+  // lastFull → Mat
+  const cFull = new OffscreenCanvas(lastFull.width, lastFull.height);
+  const cx = cFull.getContext('2d'); cx.drawImage(lastFull, 0,0);
+  const src = cv.imread(cFull);
 
-            try {
-                const response = await fetch(`${backendUrl}/analyze`, { method: 'POST', body: formData });
-                if (!response.ok) throw new Error(`서버 오류: ${response.statusText}`);
+  // 호모그래피
+  const src4 = cv.matFromArray(4,1, cv.CV_32FC2, new Float32Array(q.flat()));
+  const dst4 = cv.matFromArray(4,1, cv.CV_32FC2, new Float32Array([0,0, targetW-1,0, targetW-1,targetH-1, 0,targetH-1]));
+  const Hm = cv.getPerspectiveTransform(src4, dst4);
+  const out = new cv.Mat();
+  cv.warpPerspective(src, out, Hm, new cv.Size(targetW, targetH), cv.INTER_LINEAR, cv.BORDER_REFLECT);
 
-                const result = await response.json();
-                
-                updateProgressStep('step2', 'completed', '구도 및 형태 평가 완료');
-                setTimeout(() => updateProgressStep('step3', 'active', '명암 및 채색 평가'), 500);
-                setTimeout(() => updateProgressStep('step3', 'completed', '명암 및 채색 평가 완료'), 1500);
-                setTimeout(() => updateProgressStep('step4', 'active', '최종 피드백 생성'), 2000);
-                
-                setTimeout(() => {
-                    updateProgressStep('step4', 'completed', '최종 피드백 생성 완료!');
-                    setTimeout(() => {
-                        feedbackProgressModal.classList.add('hidden');
-                        displayResults({
-                            processed_image_url: URL.createObjectURL(imageBlob),
-                            ai_feedback: { feedback_text: result.feedback }
-                        });
-                    }, 500);
-                }, 2500);
+  // Mat → Blob
+  const canvasOut = new OffscreenCanvas(targetW, targetH);
+  cv.imshow(canvasOut, out);
+  const blob = await canvasOut.convertToBlob({ type:'image/jpeg', quality:0.92 });
 
-            } catch (error) {
-                feedbackProgressModal.classList.add('hidden');
-                console.error("분석 요청 실패:", error);
-                cameraError.textContent = "AI 분석에 실패했습니다. 잠시 후 다시 시도해주세요.";
-                cameraError.classList.remove('hidden');
-            }
-        }
-        
-        function formatFeedbackToHtml(text) {
-            const sections = text.split(/###\s*(.*?)\s*\n/g).filter(s => s.trim() !== '');
-            let html = '';
-            for (let i = 0; i < sections.length; i += 2) {
-                const title = sections[i].replace(/:/g, ''); // 제목에서 콜론 제거
-                const content = sections[i + 1].replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
-                html += `<div class="feedback-section mb-4"><h4>${title}</h4><p>${content}</p></div>`;
-            }
-            return html;
-        }
-        
-        function displayResults(data) {
-            resultSection.classList.remove('hidden');
-            document.getElementById('processedImage').src = data.processed_image_url;
-            document.getElementById('ai-feedback-text').innerHTML = formatFeedbackToHtml(data.ai_feedback.feedback_text);
-            document.getElementById('style-analysis-container').classList.remove('hidden');
-            document.getElementById('style-result').classList.add('hidden');
-        }
-        
-        const styleAnalysisButton = document.getElementById('styleAnalysisButton');
-        const styleLoading = document.getElementById('style-loading');
-        const styleResult = document.getElementById('style-result');
-        const styleResultText = document.getElementById('style-result-text');
-
-        styleAnalysisButton.addEventListener('click', async () => {
-            if (!lastImageBlob) return;
-            styleLoading.classList.remove('hidden');
-            styleResult.classList.add('hidden');
-            styleAnalysisButton.disabled = true;
-
-            const formData = new FormData();
-            formData.append('image', lastImageBlob, 'artwork.jpg');
-
-            try {
-                const response = await fetch(`${backendUrl}/analyze-style`, {
-                    method: 'POST', body: formData,
-                });
-                if (!response.ok) throw new Error('스타일 분석에 실패했습니다.');
-                const result = await response.json();
-                styleResultText.innerHTML = formatFeedbackToHtml(result.style_feedback);
-                styleResult.classList.remove('hidden');
-            } catch (error) {
-                console.error('스타일 분석 오류:', error);
-                alert(error.message);
-            } finally {
-                styleLoading.classList.add('hidden');
-                styleAnalysisButton.disabled = false;
-            }
-        });
-        
-        // --- Other form submissions ---
-        const surveyForm = document.getElementById('artb-survey-form');
-        const surveyContainer = document.getElementById('survey-container');
-        const surveyThanks = document.getElementById('survey-thanks');
-        if(surveyForm) {
-            surveyForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const formData = new FormData(surveyForm);
-                const interests = formData.getAll('interest');
-                const data = { role: formData.get('role'), interests: interests, feedback_text: formData.get('feedback_text')};
-                try {
-                    const response = await fetch(`${backendUrl}/survey`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                    });
-                    if (!response.ok) throw new Error('서버에 문제가 발생했습니다.');
-                    surveyContainer.classList.add('hidden');
-                    surveyThanks.classList.remove('hidden');
-                } catch (error) {
-                    console.error('설문 제출 오류:', error);
-                    alert('설문 제출에 실패했습니다. 잠시 후 다시 시도해주세요.');
-                }
-            });
-        }
-
-
-        const contactForm = document.getElementById('contact-form');
-        const contactContainer = document.getElementById('contact-container');
-        const contactThanks = document.getElementById('contact-thanks');
-        if(contactForm) {
-            contactForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const formData = new FormData(contactForm);
-                const data = Object.fromEntries(formData.entries());
-                try {
-                    const response = await fetch(`${backendUrl}/contact`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                    });
-                    if (!response.ok) throw new Error('문의 제출에 실패했습니다.');
-                    contactContainer.classList.add('hidden');
-                    contactThanks.classList.remove('hidden');
-                } catch (error) {
-                    console.error('문의 제출 오류:', error);
-                    alert(error.message);
-                }
-            });
-        }
-        
-        const preregisterForm = document.getElementById('preregister-form');
-        const ctaContainer = document.getElementById('cta-container');
-        const ctaThanks = document.getElementById('cta-thanks');
-        if(preregisterForm){
-            preregisterForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const formData = new FormData(preregisterForm);
-                const data = Object.fromEntries(formData.entries());
-                try {
-                    const response = await fetch(`${backendUrl}/preregister`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
-                    });
-                    if (!response.ok) throw new Error('사전 등록에 실패했습니다.');
-                    ctaContainer.classList.add('hidden');
-                    ctaThanks.classList.remove('hidden');
-                } catch (error) {
-                    console.error('사전 등록 오류:', error);
-                    alert(error.message);
-                }
-            });
-        }
+  // clean
+  src.delete(); src4.delete(); dst4.delete(); Hm.delete(); out.delete();
+  return blob;
+}
+\`;}
     </script>
 </body>
 </html>
-
